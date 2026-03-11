@@ -1,30 +1,14 @@
-import { Trophy, RotateCcw } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { X, Circle, RotateCcw } from 'lucide-react';
 
-type CellValue = 'X' | 'O' | null;
-type Board = CellValue[];
+type Player = 'X' | 'O' | null;
 
 export function TicTacToeGame() {
-  const [board, setBoard] = useState<Board>(Array(9).fill(null));
+  const [board, setBoard] = useState<Player[]>(Array(9).fill(null));
   const [isXNext, setIsXNext] = useState(true);
-  const [winner, setWinner] = useState<string | null>(null);
-  const [scores, setScores] = useState({ X: 0, O: 0, draws: 0 });
+  const [winner, setWinner] = useState<Player | 'draw' | null>(null);
 
-  useEffect(() => {
-    const result = calculateWinner(board);
-    if (result) {
-      setWinner(result);
-      setScores(prev => ({
-        ...prev,
-        [result]: prev[result as 'X' | 'O'] + 1
-      }));
-    } else if (board.every(cell => cell !== null)) {
-      setWinner('무승부');
-      setScores(prev => ({ ...prev, draws: prev.draws + 1 }));
-    }
-  }, [board]);
-
-  const calculateWinner = (squares: Board): CellValue => {
+  const calculateWinner = (squares: Player[]): Player | 'draw' | null => {
     const lines = [
       [0, 1, 2],
       [3, 4, 5],
@@ -42,6 +26,12 @@ export function TicTacToeGame() {
         return squares[a];
       }
     }
+
+    // 모든 칸이 찼는지 확인 (무승부)
+    if (squares.every(square => square !== null)) {
+      return 'draw';
+    }
+
     return null;
   };
 
@@ -52,6 +42,11 @@ export function TicTacToeGame() {
     newBoard[index] = isXNext ? 'X' : 'O';
     setBoard(newBoard);
     setIsXNext(!isXNext);
+
+    const gameWinner = calculateWinner(newBoard);
+    if (gameWinner) {
+      setWinner(gameWinner);
+    }
   };
 
   const resetGame = () => {
@@ -60,114 +55,86 @@ export function TicTacToeGame() {
     setWinner(null);
   };
 
-  const resetScores = () => {
-    setScores({ X: 0, O: 0, draws: 0 });
-    resetGame();
+  const renderSquare = (index: number) => {
+    const value = board[index];
+    return (
+      <button
+        onClick={() => handleClick(index)}
+        className={`w-full aspect-square border-2 border-gray-300 rounded-lg flex items-center justify-center text-4xl font-bold transition-all ${
+          !value && !winner
+            ? 'hover:bg-gray-100 cursor-pointer'
+            : 'cursor-not-allowed'
+        } ${value === 'X' ? 'text-blue-600' : 'text-red-600'}`}
+      >
+        {value === 'X' && <X className="w-16 h-16" />}
+        {value === 'O' && <Circle className="w-16 h-16" />}
+      </button>
+    );
   };
 
   return (
-    <div className="space-y-8">
-      {/* 점수판 */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Trophy className="w-6 h-6 text-[#00A651]" />
-            점수판
-          </h2>
-          <button
-            onClick={resetScores}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#00A651] transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-            초기화
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-blue-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-blue-600 mb-1">플레이어 X</p>
-            <p className="text-3xl font-bold text-blue-600">{scores.X}</p>
+    <div className="max-w-md mx-auto">
+      {/* 게임 정보 */}
+      <div className="mb-6 text-center">
+        {winner ? (
+          <div className="space-y-2">
+            <p className="text-2xl font-bold">
+              {winner === 'draw' ? (
+                <span className="text-gray-600">무승부!</span>
+              ) : (
+                <>
+                  <span className={winner === 'X' ? 'text-blue-600' : 'text-red-600'}>
+                    {winner}
+                  </span>
+                  <span className="text-gray-700"> 승리!</span>
+                </>
+              )}
+            </p>
+            <button
+              onClick={resetGame}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#00A651] text-white rounded-full hover:bg-[#008c44] transition-colors"
+            >
+              <RotateCcw className="w-5 h-5" />
+              다시 시작
+            </button>
           </div>
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-gray-600 mb-1">무승부</p>
-            <p className="text-3xl font-bold text-gray-600">{scores.draws}</p>
-          </div>
-          <div className="bg-red-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-red-600 mb-1">플레이어 O</p>
-            <p className="text-3xl font-bold text-red-600">{scores.O}</p>
-          </div>
-        </div>
+        ) : (
+          <p className="text-xl font-semibold text-gray-700">
+            현재 차례:{' '}
+            <span className={isXNext ? 'text-blue-600' : 'text-red-600'}>
+              {isXNext ? 'X' : 'O'}
+            </span>
+          </p>
+        )}
       </div>
 
       {/* 게임 보드 */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">틱택토 게임</h2>
-          {winner ? (
-            <div className="bg-[#00A651]/10 rounded-xl py-3 px-4 inline-block">
-              <p className="text-xl font-bold text-[#00A651]">
-                {winner === '무승부' ? '무승부입니다!' : `${winner} 플레이어 승리!`}
-              </p>
-            </div>
-          ) : (
-            <p className="text-lg text-gray-600">
-              현재 차례: <span className={`font-bold ${isXNext ? 'text-blue-600' : 'text-red-600'}`}>
-                {isXNext ? 'X' : 'O'}
-              </span>
-            </p>
-          )}
-        </div>
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+          <div key={i}>{renderSquare(i)}</div>
+        ))}
+      </div>
 
-        {/* 게임 보드 */}
-        <div className="grid grid-cols-3 gap-3 max-w-md mx-auto mb-6">
-          {board.map((cell, index) => (
-            <button
-              key={index}
-              onClick={() => handleClick(index)}
-              className={`aspect-square rounded-xl text-5xl font-bold transition-all shadow-md hover:shadow-lg
-                ${cell === 'X' ? 'bg-blue-100 text-blue-600' : 
-                  cell === 'O' ? 'bg-red-100 text-red-600' : 
-                  'bg-gray-50 text-gray-400 hover:bg-gray-100'}
-                ${!cell && !winner ? 'cursor-pointer' : 'cursor-not-allowed'}
-              `}
-              disabled={!!cell || !!winner}
-            >
-              {cell}
-            </button>
-          ))}
-        </div>
-
-        {/* 다시하기 버튼 */}
+      {/* 리셋 버튼 */}
+      {!winner && (
         <div className="text-center">
           <button
             onClick={resetGame}
-            className="bg-[#00A651] text-white font-bold py-3 px-8 rounded-full hover:bg-[#008E41] transition-colors shadow-md flex items-center gap-2 mx-auto"
+            className="inline-flex items-center gap-2 px-6 py-2 text-gray-600 border border-gray-300 rounded-full hover:bg-gray-100 transition-colors"
           >
-            <RotateCcw className="w-5 h-5" />
-            다시하기
+            <RotateCcw className="w-4 h-4" />
+            게임 초기화
           </button>
         </div>
-      </div>
+      )}
 
-      {/* 게임 설명 */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-3">게임 방법</h3>
-        <ul className="space-y-2 text-gray-700">
-          <li className="flex items-start gap-2">
-            <span className="text-[#00A651] font-bold">•</span>
-            <span>X와 O가 번갈아가며 9개의 칸 중 하나를 선택합니다.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#00A651] font-bold">•</span>
-            <span>가로, 세로, 대각선으로 3개를 먼저 연결하면 승리합니다.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#00A651] font-bold">•</span>
-            <span>모든 칸이 채워졌는데 승자가 없으면 무승부입니다.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#00A651] font-bold">•</span>
-            <span>친구와 함께 즐거운 시간을 보내세요!</span>
-          </li>
+      {/* 게임 규칙 */}
+      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-semibold text-gray-900 mb-2">게임 규칙</h3>
+        <ul className="text-sm text-gray-600 space-y-1">
+          <li>• 두 명이 번갈아가며 X와 O를 놓습니다</li>
+          <li>• 가로, 세로, 대각선으로 3개를 연속으로 놓으면 승리</li>
+          <li>• 모든 칸이 차도 승자가 없으면 무승부</li>
         </ul>
       </div>
     </div>

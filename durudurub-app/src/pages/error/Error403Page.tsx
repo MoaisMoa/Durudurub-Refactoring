@@ -1,4 +1,4 @@
-import { DurupCharacter } from './DurupCharacter';
+import { DurupCharacter } from '@/character/DurupCharacter';
 
 export function Error403Page() {
   return (

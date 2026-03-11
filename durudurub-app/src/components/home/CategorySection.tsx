@@ -6,11 +6,12 @@ import {
   Users,
   Plane,
   Palette,
-  PawPrint,
+  MoreHorizontal,
 } from 'lucide-react';
 
 interface CategorySectionProps {
   onCategoryClick: (category: string) => void;
+  onMoreClick?: () => void;
 }
 
 const categories = [
@@ -21,10 +22,9 @@ const categories = [
   { id: 5, name: '동네친구', icon: Users, color: 'bg-[#E5F9F0]', iconColor: 'text-[#00A651]' },
   { id: 6, name: '여행', icon: Plane, color: 'bg-[#E5F9FF]', iconColor: 'text-[#00BCD4]' },
   { id: 7, name: '예술', icon: Palette, color: 'bg-[#FFE5F5]', iconColor: 'text-[#E91E63]' },
-  { id: 8, name: '반려동물', icon: PawPrint, color: 'bg-[#FFE5E5]', iconColor: 'text-[#FF6B6B]' },
 ];
 
-export function CategorySection({ onCategoryClick }: CategorySectionProps) {
+export function CategorySection({ onCategoryClick, onMoreClick }: CategorySectionProps) {
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,6 +61,23 @@ export function CategorySection({ onCategoryClick }: CategorySectionProps) {
               </button>
             );
           })}
+          {onMoreClick && (
+            <button
+              className="flex flex-col items-center group"
+              onClick={onMoreClick}
+            >
+              {/* 아이콘 원형 버튼 */}
+              <div
+                className={`w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}
+              >
+                <MoreHorizontal className={`w-9 h-9 text-gray-500`} />
+              </div>
+              {/* 카테고리 이름 */}
+              <span className="text-sm font-medium text-gray-700 group-hover:text-[#00A651] transition-colors">
+                더보기
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </section>

@@ -144,21 +144,19 @@ export function WinnerDrawGame() {
           <button
             onClick={drawWinners}
             disabled={isDrawing || participants.length === 0}
-            className={`bg-white text-purple-600 font-bold py-4 px-12 rounded-full hover:bg-gray-100 transition-colors flex items-center gap-2 text-xl shadow-lg ${
+            className={`bg-white text-purple-600 font-bold p-4 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center shadow-lg ${
               isDrawing ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             <Play className="w-6 h-6" />
-            {isDrawing ? '추첨 중...' : '추첨 시작'}
           </button>
 
           {winners.length > 0 && (
             <button
               onClick={reset}
-              className="bg-white/80 text-gray-700 font-bold py-4 px-8 rounded-full hover:bg-white transition-colors flex items-center gap-2 shadow-lg"
+              className="bg-white/80 text-gray-700 font-bold p-4 rounded-full hover:bg-white transition-colors flex items-center justify-center shadow-lg"
             >
               <RotateCcw className="w-5 h-5" />
-              다시 추첨
             </button>
           )}
         </div>

@@ -42,7 +42,7 @@ export function WheelSpinnerGame() {
     const centerY = canvas.height / 2;
     const radius = Math.min(centerX, centerY) - 20;
 
-    // 캔버스 초기화
+    // 캔 ��기화
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 회전 적용
@@ -193,9 +193,9 @@ export function WheelSpinnerGame() {
         <div className="flex flex-col items-center">
           <canvas
             ref={canvasRef}
-            width={500}
-            height={500}
-            className="mb-6"
+            width={400}
+            height={400}
+            className="mb-6 max-w-full"
           />
 
           <button
@@ -220,19 +220,19 @@ export function WheelSpinnerGame() {
 
       {/* 설정 패널 */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="space-y-3 mb-4 flex flex-col items-center">
           <h2 className="text-xl font-bold text-gray-900">룰렛 항목 설정</h2>
           <div className="flex gap-2">
             <button
               onClick={addSegment}
-              className="flex items-center gap-2 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008E41] transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-[#00A651] text-white text-sm rounded-lg hover:bg-[#008E41] transition-colors"
             >
               <Plus className="w-4 h-4" />
               추가
             </button>
             <button
               onClick={resetWheel}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               초기화
