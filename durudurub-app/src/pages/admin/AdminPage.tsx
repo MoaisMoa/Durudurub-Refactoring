@@ -27,9 +27,9 @@ import {
   Folder,
   GripVertical,
 } from 'lucide-react';
-import styles from './AdminPage.module.css';
-import { Navbar } from './Navbar';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+import styles from '@/pages/admin/AdminPage.module.css';
+import { Navbar } from '@/components/header/Navbar';
+import { projectId, publicAnonKey } from 'utils/supabase/info';
 
 interface AdminPageProps {
   onBack: () => void;

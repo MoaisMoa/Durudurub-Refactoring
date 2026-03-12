@@ -7,7 +7,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
 
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleLogoClick = () => {
     console.log("홈 이동")
@@ -23,8 +23,6 @@ const Layout = ({ children }: LayoutProps) => {
 
   const handleMiniGameClick = () => {
     console.log("미니게임......")
-
-    // navigate("/minigame");
   }
 
   const handleExploreClick = (query?: string) => {
@@ -39,6 +37,11 @@ const Layout = ({ children }: LayoutProps) => {
         onLoginClick={handleLoginClick}
         onMiniGameClick={handleMiniGameClick}
         onExploreClick={handleExploreClick}
+
+        onMyPageClick={() => navigate("/mypage")}
+        onMyMeetingsClick={() => navigate("/myMeetings")}
+        onNoticeClick={() => navigate("/notice")}
+        onAdminClick={() => navigate("/admin")}
       />
 
       <div className="container mx-auto px-4">

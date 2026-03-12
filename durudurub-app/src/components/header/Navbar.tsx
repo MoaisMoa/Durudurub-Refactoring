@@ -2,6 +2,7 @@ import { Menu, X, User, Bell, Gamepad2, Shield, Search, Sparkles, MapPin, Users 
 import { DurupLogo } from '@/character/DurupLogo';
 import { useState, useEffect } from 'react';
 
+// Navbar 컴포넌트가 받을 수 있는 함수 목록 정의
 interface NavbarProps {
   onSignupClick?: () => void;
   onLoginClick?: () => void;
@@ -588,6 +589,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
                           >
                             내 모임
                           </button>
+                          {/* @공지사항 메뉴 추가하기@ */}
                         </>
                       )}
                       {/* 관리자만 관리자 페이지 메뉴 표시 */}
