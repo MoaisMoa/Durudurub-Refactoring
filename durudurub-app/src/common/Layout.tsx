@@ -1,35 +1,28 @@
 import React from 'react'
 import { Navbar } from '@/components/header/Navbar'
 import { useNavigate } from "react-router-dom";
+
 interface LayoutProps {
   children: React.ReactNode
 }
 
 const Layout = ({ children }: LayoutProps) => {
 
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
-  const handleLogoClick = () => {
-    console.log("홈 이동")
-  }
+  const handleLogoClick = () => navigate('/');
 
-  const handleSignupClick = () => {
-    console.log("회원가입")
-  }
+  const handleSignupClick = () => navigate('/signup');
 
-  const handleLoginClick = () => {
-    console.log("로그인")
-  }
+  const handleLoginClick = () => navigate('/login');
 
-  const handleMiniGameClick = () => {
-    console.log("미니게임......")
-
-    // navigate("/minigame");
-  }
+  const handleMiniGameClick = () => navigate('/minigame');
 
   const handleExploreClick = (query?: string) => {
-    console.log("모임 검색:", query)
-  }
+
+    navigate(query ? `/explore?q=${encodeURIComponent(query)}` : '/explore');
+    
+  };
 
   return (
     <>
@@ -40,7 +33,6 @@ const Layout = ({ children }: LayoutProps) => {
         onMiniGameClick={handleMiniGameClick}
         onExploreClick={handleExploreClick}
       />
-
       <div className="container mx-auto px-4">
         {children}
       </div>
