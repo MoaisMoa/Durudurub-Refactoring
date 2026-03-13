@@ -34,9 +34,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedProfileImage = localStorage.getItem('profileImage');
 
     if (storedToken && storedUser) {
-      // 토큰 유효성 간단 체크 - JWT 형식인지 확인
       const tokenParts = storedToken.split('.');
       if (tokenParts.length === 3) {
+        // JWT 만료 여부 체크
+        try {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp && payload.exp < now) {
+            // 토큰 만료 - 클리어
+            console.log('토큰 만료 - localStorage 클리어');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            localStorage.removeItem('profileImage');
+            return;
+          }
+        } catch {
+          // payload 파싱 실패 시 토큰 제거
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+          localStorage.removeItem('profileImage');
+          return;
+        }
+
         setAccessToken(storedToken);
         setUser(JSON.parse(storedUser));
         if (storedProfileImage) {
@@ -44,7 +63,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         console.log('저장된 로그인 정보 복원 성공');
       } else {
-        // 잘못된 토큰 형식 - 클리어
         console.log('잘못된 토큰 형식 감지 - localStorage 클리어');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
