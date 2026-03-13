@@ -6,13 +6,14 @@ import { CategorySection } from '../components/home/CategorySection'
 import { AdBanner } from '../components/home/AdBanner'
 import { useNavigate } from 'react-router-dom'
 
+// 기존 홈
 const Home = () => {
 
   const navigate = useNavigate()
 
   const handleCategoryClick = (category: string) => {
     console.log(category)
-    navigate(`/explore?q=${encodeURIComponent(category)}`)
+    navigate(`/explore?category=${encodeURIComponent(category)}`)
   }
 
   const handleMoreClick = () => {

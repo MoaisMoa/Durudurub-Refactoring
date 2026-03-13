@@ -13,6 +13,7 @@ export default function App() {
       <Toaster position="top-center" richColors />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<LoginPage onClose={() => console.log("close")} onSignupClick={() => console.log("signup")}/>} />
         <Route path="/explore" element={<ExploreWrapper />} />
         <Route path="/club/:id" element={<ClubDetailWrapper />} />
 
