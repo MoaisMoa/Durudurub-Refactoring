@@ -49,6 +49,32 @@ export default function ClubDetailWrapper() {
 
   const c = club.club;
 
+  // API 멤버 데이터를 CommunityDetailPage 형식으로 매핑
+  const mappedMembers = (club.members || []).map((m: any) => ({
+    id: m.userNo,
+    name: m.user?.username || '멤버',
+    role: m.userNo === c.hostNo ? 'leader' : 'member',
+    joinedDate: m.joinedAt ? new Date(m.joinedAt).toISOString().slice(0, 10) : '',
+    profileImg: m.user?.profileImg || '',
+  }));
+
+  // API 게시글 데이터를 CommunityDetailPage 형식으로 매핑
+  const mappedBoards = (club.boards || []).map((b: any) => ({
+    id: b.no,
+    author: b.user?.username || '익명',
+    content: b.content || '',
+    date: b.createdAt ? new Date(b.createdAt).toLocaleDateString('ko-KR') : '',
+    likes: b.likeCount || 0,
+    isLiked: b.liked || false,
+    images: b.imageList?.map((img: any) => img.filePath) || [],
+    comments: [],
+  }));
+
+  // 모임 일정
+  const schedules = c.clubDate
+    ? [{ id: 1, date: new Date(c.clubDate).toISOString().slice(0, 10), time: new Date(c.clubDate).toTimeString().slice(0, 5) }]
+    : [];
+
   return (
     <CommunityDetailPage
       id={c.no}
@@ -56,12 +82,19 @@ export default function ClubDetailWrapper() {
       title={c.title || ''}
       description={c.description || ''}
       location={c.location || ''}
-      hostName={c.host?.nickname || '호스트'}
+      hostName={c.host?.username || '호스트'}
       hostId={c.host?.userId}
       participants={{ current: c.currentMembers || 0, max: c.maxMembers || 0 }}
       user={null}
       onBack={() => navigate(-1)}
       onLoginClick={() => navigate('/login')}
+      initialMembers={mappedMembers}
+      initialBoards={mappedBoards}
+      initialSchedules={schedules}
+      lat={c.lat || null}
+      lng={c.lng || null}
+      likeCount={c.likeCount || 0}
+      isLiked={c.liked || false}
     />
   );
 }

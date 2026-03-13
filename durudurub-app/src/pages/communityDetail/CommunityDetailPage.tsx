@@ -1,6 +1,6 @@
 import { MapPin, Calendar, Clock, Users, Star, ArrowLeft, MessageSquare, Lock, ThumbsUp, CheckCircle, Clock as ClockIcon, X, Image as ImageIcon, Send, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+// Supabase 제거 - 백엔드 API 사용
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -59,6 +59,13 @@ interface CommunityDetailPageProps {
   user: any;
   onBack: () => void;
   onLoginClick: () => void;
+  initialMembers?: { id: number; name: string; role: string; joinedDate: string; profileImg?: string }[];
+  initialBoards?: Post[];
+  initialSchedules?: MeetingSchedule[];
+  lat?: number | null;
+  lng?: number | null;
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 interface Comment {
@@ -96,10 +103,17 @@ export function CommunityDetailPage({
   participants,
   user,
   onBack,
-  onLoginClick
+  onLoginClick,
+  initialMembers,
+  initialBoards,
+  initialSchedules,
+  lat: propLat,
+  lng: propLng,
+  likeCount: propLikeCount,
+  isLiked: propIsLiked,
 }: CommunityDetailPageProps) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [favoriteCount, setFavoriteCount] = useState(42); // 프론트엔드용 하드코딩된 값
+  const [isLiked, setIsLiked] = useState(propIsLiked || false);
+  const [favoriteCount, setFavoriteCount] = useState(propLikeCount || 0);
   const [memberStatus, setMemberStatus] = useState<'none' | 'pending' | 'approved'>('none');
   const [showMemberOnlyModal, setShowMemberOnlyModal] = useState(false);
   const [showAdModal, setShowAdModal] = useState(false);
@@ -110,51 +124,12 @@ export function CommunityDetailPage({
   const [reportDetails, setReportDetails] = useState<string>('');
   const [reportedUsers, setReportedUsers] = useState<Set<string>>(new Set());
   const [showMemberListModal, setShowMemberListModal] = useState(false);
-  const [members, setMembers] = useState([
-    { id: 1, name: hostName, role: 'leader', joinedDate: '2025-12-01' },
-    { id: 2, name: '김민수', role: 'member', joinedDate: '2025-12-15' },
-    { id: 3, name: '박지은', role: 'member', joinedDate: '2026-01-05' },
-    { id: 4, name: '이준호', role: 'member', joinedDate: '2026-01-10' },
-    { id: 5, name: '최수진', role: 'member', joinedDate: '2026-01-20' },
-    { id: 6, name: '정하늘', role: 'member', joinedDate: '2026-01-22' },
-    { id: 7, name: '강서연', role: 'member', joinedDate: '2026-01-23' },
-    { id: 8, name: '윤태양', role: 'member', joinedDate: '2026-01-24' },
-    { id: 9, name: '송민지', role: 'member', joinedDate: '2026-01-25' },
-    { id: 10, name: '한지우', role: 'member', joinedDate: '2026-01-26' },
-  ]);
-  const [posts, setPosts] = useState<Post[]>([
-    { 
-      id: 1, 
-      author: '김민수', 
-      content: '첫 모임 너무 재미있었어요! 다음에도 참여할게요.', 
-      date: '2일 전', 
-      likes: 12, 
-      isLiked: false, 
-      images: ['https://images.unsplash.com/photo-1522071820081-009f0129c71c'],
-      comments: [
-        { id: 1, author: '박지은', content: '저도 정말 즐거웠어요!', date: '1일 전' },
-        { id: 2, author: '이준호', content: '다음에 또 만나요~', date: '1일 전' },
-      ]
-    },
-    { 
-      id: 2, 
-      author: '지은', 
-      content: '다들 너무 친절하셔서 좋았습니다. 감사합니다!', 
-      date: '5일 전', 
-      likes: 8, 
-      isLiked: false, 
-      comments: [] 
-    },
-    { 
-      id: 3, 
-      author: '박준호', 
-      content: '다음 모임 장소는 어디인가요?', 
-      date: '1주 전', 
-      likes: 5, 
-      isLiked: false, 
-      comments: [] 
-    },
-  ]);
+  const [members, setMembers] = useState(
+    initialMembers && initialMembers.length > 0
+      ? initialMembers
+      : [{ id: 0, name: hostName, role: 'leader', joinedDate: '' }]
+  );
+  const [posts, setPosts] = useState<Post[]>(initialBoards || []);
   const [newPost, setNewPost] = useState('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [commentInputs, setCommentInputs] = useState<{ [key: number]: string }>({});
@@ -177,11 +152,7 @@ export function CommunityDetailPage({
   const [editedDescription, setEditedDescription] = useState(description);
   const [editedLocation, setEditedLocation] = useState(location);
   const [editedMaxParticipants, setEditedMaxParticipants] = useState(participants?.max || 0);
-  const [editedSchedules, setEditedSchedules] = useState<MeetingSchedule[]>([
-    { id: 1, date: '2026-02-01', time: '09:00' },
-    { id: 2, date: '2026-02-08', time: '09:00' },
-    { id: 3, date: '2026-02-15', time: '09:00' },
-  ]);
+  const [editedSchedules, setEditedSchedules] = useState<MeetingSchedule[]>(initialSchedules || []);
   const [showDeleteScheduleModal, setShowDeleteScheduleModal] = useState(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<number | null>(null);
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false);
@@ -223,16 +194,16 @@ export function CommunityDetailPage({
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return;
 
-    // 지도 생성 (서울 중심으로 기본 설정)
-    const map = L.map(mapRef.current).setView([37.5665, 126.9780], 13);
+    const mapLat = propLat || 37.5665;
+    const mapLng = propLng || 126.9780;
+
+    const map = L.map(mapRef.current).setView([mapLat, mapLng], 13);
     
-    // 타일 레이어 추가
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // 마커 추가
-    L.marker([37.5665, 126.9780], { icon: customIcon }).addTo(map);
+    L.marker([mapLat, mapLng], { icon: customIcon }).addTo(map);
 
     leafletMapRef.current = map;
 
@@ -242,7 +213,7 @@ export function CommunityDetailPage({
         leafletMapRef.current = null;
       }
     };
-  }, []);
+  }, [propLat, propLng]);
 
   // 게시글 섹션에 도달했을 때 광고 표시
   useEffect(() => {
@@ -281,151 +252,41 @@ export function CommunityDetailPage({
 
   // 컴포넌트 마운트 시 멤버십 상태 조회
   useEffect(() => {
-    const fetchMembershipStatus = async () => {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken || !user) {
-        setMemberStatus('none');
-        return;
-      }
-
-      // test 계정은 자동으로 승인 상태로 설정 (테스트용)
-      if (user.userId === 'test') {
-        setMemberStatus('approved');
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities/1/membership`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          setMemberStatus('none');
-          return;
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          setMemberStatus(data.status || 'none');
-        } else {
-          setMemberStatus('none');
-        }
-      } catch (error) {
-        setMemberStatus('none');
-        console.log('멤버십 상태를 불러올 수 없어 기본값으로 설정했습니다.');
-      }
-    };
-
-    fetchMembershipStatus();
+    // 백엔드 API를 통해 멤버십 상태 확인 (현재 user=null이므로 none)
+    if (!user) {
+      setMemberStatus('none');
+      return;
+    }
+    // TODO: 로그인 구현 후 /api/clubs/{id}/membership 엔드포인트 사용
+    setMemberStatus('none');
   }, [user]);
 
-  // 컴포넌트 마운트 시 즐겨찾기 상태 조회
+  // 즉겨찾기 상태 - 백엔드 API 사용
   useEffect(() => {
-    const fetchFavoriteStatus = async () => {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken || !user) {
-        setIsLiked(false);
-        return;
-      }
-
+    if (!user) return;
+    const fetchLikeStatus = async () => {
       try {
-        const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities/1/favorite`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          setIsLiked(false);
-          return;
+        const res = await fetch(`/api/likes/club/${id}`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setIsLiked(data.liked || false);
         }
-
-        const data = await response.json();
-        if (data.success) {
-          setIsLiked(data.isFavorite || false);
-          setFavoriteCount(data.favoriteCount || 0);
-        } else {
-          setIsLiked(false);
-        }
-      } catch (error) {
-        setIsLiked(false);
-        console.log('즐겨찾기 상태를 불러올 수 없어 기본값으로 설정했습니다.');
+      } catch {
+        // 실패 시 기본값 유지
       }
     };
+    fetchLikeStatus();
+  }, [user, id]);
 
-    fetchFavoriteStatus();
-  }, [user]);
-
-  // 즐겨찾기 수 조회
-  useEffect(() => {
-    const fetchFavoriteCount = async () => {
-      try {
-        const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities/1/favorite-count`
-        );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          setFavoriteCount(data.count || 0);
-        }
-      } catch (error) {
-        console.log('즐겨찾기 수를 불러올 수 없습니다.');
-      }
-    };
-
-    fetchFavoriteCount();
-  }, []);
+  // 즐겨찾기 수는 props에서 받은 likeCount로 초기화됨
 
   const handleJoinGroup = async () => {
     if (!user) {
       setShowLoginRequiredModal(true);
       return;
     }
-
-    const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) {
-      console.error('액세스 토큰이 없습니다');
-      setShowLoginRequiredModal(true);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities/1/join`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setMemberStatus('pending');
-        setShowJoinSuccessModal(true);
-      } else {
-        console.error('가입 신청 실패:', data.error);
-        alert(data.error || '가입 신청에 실패했습니다.');
-      }
-    } catch (error: any) {
-      console.error('가입 신청 오류:', error);
-      alert('가입 신청 중 오류가 발생했습니다: ' + error.message);
-    }
+    // TODO: 로그인 구현 후 /api/clubs/{id}/join 엔드포인트 사용
+    setShowLoginRequiredModal(true);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -587,16 +448,27 @@ export function CommunityDetailPage({
     }
   };
 
-  const handleToggleFavorite = () => {
-    // 로그인 확인
+  const handleToggleFavorite = async () => {
     if (!user) {
       setShowLoginModal(true);
       return;
     }
     
-    // 프론트엔드 전용: 즐겨찾기 토글
-    setIsLiked(!isLiked);
-    setFavoriteCount(isLiked ? favoriteCount - 1 : favoriteCount + 1);
+    try {
+      const res = await fetch(`/api/likes/club/${id}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsLiked(data.liked);
+        setFavoriteCount(prev => data.liked ? prev + 1 : prev - 1);
+      }
+    } catch {
+      // 실패 시 프론트엔드에서 토글
+      setIsLiked(!isLiked);
+      setFavoriteCount(isLiked ? favoriteCount - 1 : favoriteCount + 1);
+    }
   };
 
   const handleEditInfoSave = (data: {
