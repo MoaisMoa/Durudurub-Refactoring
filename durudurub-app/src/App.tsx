@@ -1,42 +1,56 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import ClubDetailWrapper from "./pages/communityDetail/ClubDetailWrapper";
 import ExploreWrapper from "./pages/explore/ExploreWrapper";
 import Home from "./pages/Home";
-import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/login/LoginPage";
+import { SignupPage } from "./pages/signup/SignupPage";
+import { AppProvider, useApp } from "./contexts/AppContext";
 
+function AppRoutes() {
+  const navigate = useNavigate();
+  const { handleLogin } = useApp();
+
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+
+      <Route
+        path="/login"
+        element={
+          <LoginPage 
+            onClose={() => navigate("/")}
+            onSignupClick={() => navigate("/signup")}
+            onLoginSuccess={(userData, token) => {
+              handleLogin(userData, token);
+              navigate("/");
+            }}
+          />
+        }
+      />
+
+      <Route path="/explore" element={<ExploreWrapper />} />
+
+      <Route path="/club/:id" element={<ClubDetailWrapper />} />
+
+      <Route
+        path="/signup"
+        element={
+          <SignupPage
+            onClose={() => navigate("/")}
+            onLoginClick={() => navigate("/login")}
+          />
+        }
+      />
+    </Routes>
+  );
+}
 
 export default function App() {
   return (
-    <>
+    <AppProvider>
       <Toaster position="top-center" richColors />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<LoginPage onClose={() => console.log("close")} onSignupClick={() => console.log("signup")}/>} />
-        <Route path="/explore" element={<ExploreWrapper />} />
-        <Route path="/club/:id" element={<ClubDetailWrapper />} />
-
-        <Route
-          path="/login"
-          element={
-            <LoginPage
-              onClose={() => {}}
-              onSignupClick={() => {}}
-            />
-          }
-        />
-
-        <Route
-          path="/signup"
-          element={
-            <SignupPage
-              onClose={() => {}}
-              onLoginClick={() => {}}
-            />
-          }
-        />
-      </Routes>
-    </>
+      <AppRoutes />
+    </AppProvider>
   );
-} 
+}

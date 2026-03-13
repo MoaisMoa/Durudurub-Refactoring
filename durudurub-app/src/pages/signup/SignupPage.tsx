@@ -1,7 +1,7 @@
+import api from '@/api/axios';
 import { Eye, EyeOff, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast, Toaster } from 'sonner';
-import api from "../api/axios";
 
 interface SignupPageProps {
   onClose: () => void;
@@ -72,21 +72,22 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
 
     try {
 
-    const res = await api.post("/api/users/signup", {
-      userId: formData.userId,
-      password: formData.password,
-      nickname: formData.nickname,
-      age: formData.age,
-      gender: formData.gender,
-      address: formData.address,
-      profileImage: profileImage
-    });
+    const form = new FormData();
+
+    form.append("userId", formData.userId);
+    form.append("password", formData.password);
+    form.append("username", formData.nickname);
+    form.append("age", formData.age);
+    form.append("gender", formData.gender);
+    form.append("address", formData.address);
+
+    const res = await api.post("/api/users/join", form);
 
     const data = res.data;
 
-    if (data.success) {
+    if (data === "SUCCESS") {
 
-      setSuccessMessage("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
+      setSuccessMessage("회원가입이 완료되었습니다! 2초 후 로그인 페이지로 이동합니다.");
 
       setTimeout(() => {
         onLoginClick();
@@ -94,7 +95,7 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
 
     } else {
 
-      setErrorMessage(data.error || "회원가입 실패");
+      setErrorMessage("회원가입 실패");
 
     }
 
@@ -103,7 +104,10 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
     console.error(error);
     setErrorMessage("서버 연결 실패");
 
-  }
+  }finally {
+
+  setIsLoading(false);
+}
 }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -182,19 +186,19 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
 
     try {
 
-      const res = await api.get("/api/user/check-id", {
+      const res = await api.get("/api/users/check-userid", {
         params: { userId: formData.userId }
       });
 
-      if (!res.data) {
+      if (res.data.ok) {
 
         setEmailCheckStatus("available");
-        toast.success("사용 가능한 이메일입니다");
+        toast.success(res.data.message || "사용 가능한 이메일입니다");
 
       } else {
 
         setEmailCheckStatus("taken");
-        toast.error("이미 사용 중인 이메일입니다");
+        toast.error(res.data.message || "이미 사용 중인 이메일입니다");
 
       }
 
@@ -208,43 +212,38 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
 
 };
 
-  // 닉네임 중복 체크 함수
   const handleNicknameCheck = async () => {
-    if (!formData.nickname) {
-      toast.error('닉네임을 입력해주세요');
-      return;
+
+  if (!formData.nickname) {
+    toast.error("닉네임을 입력해주세요");
+    return;
+  }
+
+  setNicknameCheckStatus("checking");
+
+  try {
+
+    const res = await api.get("/api/users/check-username", {
+      params: { username: formData.nickname }
+    });
+
+    if (res.data.ok) {
+      setNicknameCheckStatus("available");
+      toast.success(res.data.message || "사용 가능한 닉네임입니다");
+    } else {
+      setNicknameCheckStatus("taken");
+      toast.error(res.data.message || "이미 사용 중인 닉네임입니다");
     }
 
-    setNicknameCheckStatus('checking');
+  } catch (error) {
 
-    try {
-      const response = await fetch(
-        `https://${<></>}.supabase.co/functions/v1/make-server-12a2c4b5/check-nickname`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${<></>}`,
-          },
-          body: JSON.stringify({ nickname: formData.nickname }),
-        }
-      );
+    console.error(error);
+    toast.error("중복 체크 실패");
+    setNicknameCheckStatus("idle");
 
-      const data = await response.json();
+  }
 
-      if (data.available) {
-        setNicknameCheckStatus('available');
-        toast.success('사용 가능한 닉네임입니다');
-      } else {
-        setNicknameCheckStatus('taken');
-        toast.error('이미 사용 중인 닉네임입니다');
-      }
-    } catch (error) {
-      console.error('닉네임 중복 체크 오류:', error);
-      toast.error('중복 체크에 실패했습니다');
-      setNicknameCheckStatus('idle');
-    }
-  };
+};
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] flex items-center justify-center px-4 py-12">

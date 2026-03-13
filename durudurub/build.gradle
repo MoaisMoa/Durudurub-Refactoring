@@ -43,6 +43,9 @@ dependencies {
 	// 타임리프 다이얼렉트 레이아웃 (추가)
 	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
 	// JSON 처리는 spring-boot-starter-web에 포함된 Jackson 사용 (별도 의존성 불필요)
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 }
 
 tasks.named('test') {
