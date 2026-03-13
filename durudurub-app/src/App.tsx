@@ -1,23 +1,56 @@
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
-import Home from "./pages/Home";
-import { Route, Routes } from "react-router-dom";
-import { ExplorePage } from "./pages/explore/ExplorePage";
-import ExploreWrapper from "./pages/explore/ExploreWrapper";
 import ClubDetailWrapper from "./pages/communityDetail/ClubDetailWrapper";
-// 로그인 지우기
-import { LoginPage }  from "./pages/login/LoginPage";
+import ExploreWrapper from "./pages/explore/ExploreWrapper";
+import Home from "./pages/Home";
+import { LoginPage } from "./pages/login/LoginPage";
+import { SignupPage } from "./pages/signup/SignupPage";
+import { AppProvider, useApp } from "./contexts/AppContext";
 
+function AppRoutes() {
+  const navigate = useNavigate();
+  const { handleLogin } = useApp();
+
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+
+      <Route
+        path="/login"
+        element={
+          <LoginPage 
+            onClose={() => navigate("/")}
+            onSignupClick={() => navigate("/signup")}
+            onLoginSuccess={(userData, token) => {
+              handleLogin(userData, token);
+              navigate("/");
+            }}
+          />
+        }
+      />
+
+      <Route path="/explore" element={<ExploreWrapper />} />
+
+      <Route path="/club/:id" element={<ClubDetailWrapper />} />
+
+      <Route
+        path="/signup"
+        element={
+          <SignupPage
+            onClose={() => navigate("/")}
+            onLoginClick={() => navigate("/login")}
+          />
+        }
+      />
+    </Routes>
+  );
+}
 
 export default function App() {
   return (
-    <>
+    <AppProvider>
       <Toaster position="top-center" richColors />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<LoginPage onClose={() => console.log("close")} onSignupClick={() => console.log("signup")}/>} />
-        <Route path="/explore" element={<ExploreWrapper />} />
-        <Route path="/club/:id" element={<ClubDetailWrapper />} />
-      </Routes>
-    </>
+      <AppRoutes />
+    </AppProvider>
   );
 }

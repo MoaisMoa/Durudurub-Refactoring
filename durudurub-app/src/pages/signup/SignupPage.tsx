@@ -1,6 +1,6 @@
+import api from '@/api/axios';
+import { Eye, EyeOff, Upload, X } from 'lucide-react';
 import { useState } from 'react';
-import { Eye, EyeOff, X, Upload, Check } from 'lucide-react';
-import { projectId, publicAnonKey } from 'utils/supabase/info';
 import { toast, Toaster } from 'sonner';
 
 interface SignupPageProps {
@@ -71,45 +71,44 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
     setSuccessMessage('');
 
     try {
-      // 서버에 회원가입 요청
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/signup`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({
-            userId: formData.userId,
-            password: formData.password,
-            nickname: formData.nickname,
-            age: formData.age,
-            gender: formData.gender,
-            address: formData.address,
-            profileImage: profileImage,
-          }),
-        }
-      );
 
-      const data = await response.json();
+    const form = new FormData();
 
-      if (data.success) {
-        setSuccessMessage('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
-        // 2초 후 로그인 페이지로 이동
-        setTimeout(() => {
-          onLoginClick();
-        }, 2000);
-      } else {
-        setErrorMessage(data.error || '회원가입에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('회원가입 오류:', error);
-      setErrorMessage('서버 연결에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsLoading(false);
+    form.append("userId", formData.userId);
+    form.append("password", formData.password);
+    form.append("username", formData.nickname);
+    form.append("age", formData.age);
+    form.append("gender", formData.gender);
+    form.append("address", formData.address);
+
+    const res = await api.post("/api/users/join", form);
+
+    const data = res.data;
+
+    if (data === "SUCCESS") {
+
+      setSuccessMessage("회원가입이 완료되었습니다! 2초 후 로그인 페이지로 이동합니다.");
+
+      setTimeout(() => {
+        onLoginClick();
+      }, 2000);
+
+    } else {
+
+      setErrorMessage("회원가입 실패");
+
     }
-  };
+
+  } catch (error) {
+
+    console.error(error);
+    setErrorMessage("서버 연결 실패");
+
+  }finally {
+
+  setIsLoading(false);
+}
+}
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -170,85 +169,81 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
 
   // 이메일 중복 체크 함수
   const handleEmailCheck = async () => {
+
     if (!formData.userId) {
-      toast.error('이메일을 입력해주세요');
+      toast.error("이메일을 입력해주세요");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(formData.userId)) {
-      toast.error('올바른 이메일 형식을 입력해주세요');
+      toast.error("올바른 이메일 형식이 아닙니다");
       return;
     }
 
-    setEmailCheckStatus('checking');
+    setEmailCheckStatus("checking");
 
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/check-email`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({ email: formData.userId }),
-        }
-      );
 
-      const data = await response.json();
+      const res = await api.get("/api/users/check-userid", {
+        params: { userId: formData.userId }
+      });
 
-      if (data.available) {
-        setEmailCheckStatus('available');
-        toast.success('사용 가능한 이메일입니다');
+      if (res.data.ok) {
+
+        setEmailCheckStatus("available");
+        toast.success(res.data.message || "사용 가능한 이메일입니다");
+
       } else {
-        setEmailCheckStatus('taken');
-        toast.error('이미 사용 중인 이메일입니다');
-      }
-    } catch (error) {
-      console.error('이메일 중복 체크 오류:', error);
-      toast.error('중복 체크에 실패했습니다');
-      setEmailCheckStatus('idle');
-    }
-  };
 
-  // 닉네임 중복 체크 함수
+        setEmailCheckStatus("taken");
+        toast.error(res.data.message || "이미 사용 중인 이메일입니다");
+
+      }
+
+    } catch (error) {
+
+      console.error(error);
+      toast.error("중복 체크 실패");
+      setEmailCheckStatus("idle");
+
+    }
+
+};
+
   const handleNicknameCheck = async () => {
-    if (!formData.nickname) {
-      toast.error('닉네임을 입력해주세요');
-      return;
+
+  if (!formData.nickname) {
+    toast.error("닉네임을 입력해주세요");
+    return;
+  }
+
+  setNicknameCheckStatus("checking");
+
+  try {
+
+    const res = await api.get("/api/users/check-username", {
+      params: { username: formData.nickname }
+    });
+
+    if (res.data.ok) {
+      setNicknameCheckStatus("available");
+      toast.success(res.data.message || "사용 가능한 닉네임입니다");
+    } else {
+      setNicknameCheckStatus("taken");
+      toast.error(res.data.message || "이미 사용 중인 닉네임입니다");
     }
 
-    setNicknameCheckStatus('checking');
+  } catch (error) {
 
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/check-nickname`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({ nickname: formData.nickname }),
-        }
-      );
+    console.error(error);
+    toast.error("중복 체크 실패");
+    setNicknameCheckStatus("idle");
 
-      const data = await response.json();
+  }
 
-      if (data.available) {
-        setNicknameCheckStatus('available');
-        toast.success('사용 가능한 닉네임입니다');
-      } else {
-        setNicknameCheckStatus('taken');
-        toast.error('이미 사용 중인 닉네임입니다');
-      }
-    } catch (error) {
-      console.error('닉네임 중복 체크 오류:', error);
-      toast.error('중복 체크에 실패했습니다');
-      setNicknameCheckStatus('idle');
-    }
-  };
+};
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] flex items-center justify-center px-4 py-12">

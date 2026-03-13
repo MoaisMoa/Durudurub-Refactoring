@@ -5,9 +5,11 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -15,26 +17,27 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.aloha.durudurub.dto.User;
+import com.aloha.durudurub.security.JwtProvider;
 import com.aloha.durudurub.service.UserService;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * 회원 API 컨트롤러 (Ajax)
- */
 @Slf4j
-@CrossOrigin("*")
 @RestController
 @RequestMapping("/api/users")
 public class UserApiController {
 
-    @Autowired 
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
+
+    @Autowired
     private UserService userService;
 
-    /**
-     * 이메일(user_id) 중복 체크
-     * /api/users/check-userid?userId=...
-     */
+    UserApiController(PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
+        this.passwordEncoder = passwordEncoder;
+        this.jwtProvider = jwtProvider;
+    }
+
     @GetMapping("/check-userid")
     public ResponseEntity<?> checkUserId(@RequestParam("userId") String userId) {
         try {
@@ -54,10 +57,6 @@ public class UserApiController {
         }
     }
 
-    /**
-     * 닉네임(username) 중복 체크
-     * /api/users/check-username?username=...
-     */
     @GetMapping("/check-username")
     public ResponseEntity<?> checkUsername(@RequestParam("username") String username) {
         try {
@@ -77,11 +76,7 @@ public class UserApiController {
         }
     }
 
-    /**
-     * 회원가입 (AJAX) - multipart (프로필 사진 포함)
-     * /api/users/join
-     */
-    @PostMapping(value="/join", consumes = "multipart/form-data")
+    @PostMapping(value = "/join", consumes = "multipart/form-data")
     public ResponseEntity<?> join(
             @RequestParam("userId") String userId,
             @RequestParam("password") String password,
@@ -89,10 +84,8 @@ public class UserApiController {
             @RequestParam(value = "age", required = false, defaultValue = "0") int age,
             @RequestParam(value = "gender", required = false) String gender,
             @RequestParam(value = "address", required = false) String address,
-            @RequestPart(value = "profileImgFile", required = false) MultipartFile profileImgFile
-    ) {
+            @RequestPart(value = "profileImgFile", required = false) MultipartFile profileImgFile) {
         try {
-            // ✅ 기존 User DTO로 묶어서 서비스로 넘김 (폴더 추가 없이)
             User user = new User();
             user.setUserId(userId);
             user.setPassword(password);
@@ -101,8 +94,6 @@ public class UserApiController {
             user.setGender(gender);
             user.setAddress(address);
 
-            // ✅ 서비스에 파일까지 넘기는 메서드가 필요
-            // 1) userService.insert(user, profileImgFile) 로 오버로딩 추천
             int userNo = userService.insert(user, profileImgFile);
 
             if (userNo <= 0) {
@@ -117,5 +108,48 @@ public class UserApiController {
             log.error("회원가입 실패", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+
+        String userId = request.get("userId");
+        String password = request.get("password");
+
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "error", "아이디를 입력해주세요."));
+        }
+
+        if (password == null || password.isBlank()) {
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "error", "비밀번호를 입력해주세요."));
+        }
+
+        User user = userService.selectByUserId(userId);
+
+        if (user == null) {
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "error", "존재하지 않는 아이디입니다."));
+        }
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "error", "비밀번호가 틀렸습니다."));
+        }
+
+        String role = "ROLE_USER";
+        String token = jwtProvider.createToken(user.getUserId(), role);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "로그인 성공",
+                "token", token,
+                "userId", user.getUserId(),
+                "role", role));
     }
 }

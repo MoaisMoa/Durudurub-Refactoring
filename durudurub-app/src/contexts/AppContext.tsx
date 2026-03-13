@@ -54,10 +54,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleLogin = (userData: User, token: string) => {
+    console.log('[AppContext] handleLogin 호출됨:', { userData, token: token?.substring(0, 20) + '...' });
     setUser(userData);
     setAccessToken(token);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('accessToken', token);
+    console.log('[AppContext] user 상태 설정 완료');
   };
 
   const handleLogout = () => {
