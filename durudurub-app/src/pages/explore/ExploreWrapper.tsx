@@ -1,11 +1,13 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ExplorePage } from './ExplorePage';
+import { useApp } from '@/contexts/AppContext';
 
 
 // 기존 explore
 export default function ExploreWrapper() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, accessToken, profileImage, handleLogout } = useApp();
 
   return (
     <ExplorePage
@@ -19,10 +21,11 @@ export default function ExploreWrapper() {
       onMiniGameClick={() => navigate('/minigame')}
       onMyMeetingsClick={() => navigate('/mypage')}
       onPaymentClick={() => navigate('/payment')}
-      onLogout={() => { /* TODO: 로그아웃 처리 */ }}
-      user={null}
-      accessToken={null}
-      profileImage={null}
+      onCreateClick={() => navigate('/community/create')}
+      onLogout={handleLogout}
+      user={user}
+      accessToken={accessToken}
+      profileImage={profileImage}
       initialSearchQuery={searchParams.get('q') || ''}
       initialCategory={searchParams.get('category') || ''}
     />

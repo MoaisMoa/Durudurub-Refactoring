@@ -33,6 +33,7 @@ export function ExplorePageWrapper() {
         onMiniGameClick={() => navigate('/minigame')}
         onMyMeetingsClick={() => navigate('/meetings')}
         onPaymentClick={() => navigate('/payment')}
+        onCreateClick={() => navigate('/community/create')}
         user={user}
         accessToken={accessToken}
         profileImage={profileImage}

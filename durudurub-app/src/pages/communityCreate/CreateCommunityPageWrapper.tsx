@@ -16,7 +16,6 @@ export function CreateCommunityPageWrapper() {
     <CreateCommunityPage
       onBack={() => navigate('/')}
       user={user}
-      accessToken={accessToken}
       onSignupClick={() => navigate('/signup')}
       onLoginClick={() => navigate('/login')}
       onLogoClick={() => navigate('/')}

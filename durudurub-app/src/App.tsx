@@ -5,6 +5,7 @@ import ExploreWrapper from "./pages/explore/ExploreWrapper";
 import Home from "./pages/Home";
 import { LoginPage } from "./pages/login/LoginPage";
 import { SignupPage } from "./pages/signup/SignupPage";
+import { CreateCommunityPageWrapper } from "./pages/communityCreate/CreateCommunityPageWrapper";
 import { AppProvider, useApp } from "./contexts/AppContext";
 
 function AppRoutes() {
@@ -30,6 +31,8 @@ function AppRoutes() {
       />
 
       <Route path="/explore" element={<ExploreWrapper />} />
+
+      <Route path="/community/create" element={<CreateCommunityPageWrapper />} />
 
       <Route path="/club/:id" element={<ClubDetailWrapper />} />
 
