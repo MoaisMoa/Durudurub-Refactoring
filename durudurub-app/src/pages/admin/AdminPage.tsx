@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import styles from '@/pages/admin/AdminPage.module.css';
 import { Navbar } from '@/components/header/Navbar';
-import { projectId, publicAnonKey } from 'utils/supabase/info';
+// import { projectId, publicAnonKey } from 'utils/supabase/info';
 
 interface AdminPageProps {
   onBack: () => void;
@@ -44,11 +44,11 @@ interface AdminPageProps {
   onMiniGameClick: () => void;
   onMyMeetingsClick: () => void;
   onLogout: () => void;
-  onNavigateToCommunity?: (communityId: string) => void;
+  onNavigateToCommunity?: (communityId: number) => void;
 }
 
 interface UserData {
-  id: string;
+  no: number;
   username: string;
   email: string;
   createdAt: string;
@@ -58,7 +58,7 @@ interface UserData {
 }
 
 interface CommunityData {
-  id: string;
+  no: number;
   title: string;
   category: string;
   leaderName: string;
@@ -68,10 +68,10 @@ interface CommunityData {
 }
 
 interface ReportData {
-  id: string;
+  no: number;
   reporterName: string;
   reportedContent: string;
-  reportedUserId?: string; // 신고된 사용자 ID
+  reportedUserId?: number; // 신고된 사용자 ID
   reportedUserName?: string; // 신고된 사용자 이름
   reportedUserEmail?: string; // 신고된 사용자 이메일
   reason: string;
@@ -80,7 +80,7 @@ interface ReportData {
 }
 
 interface BannerData {
-  id: string;
+  no: number;
   title: string;
   imageUrl: string;
   linkUrl: string;
@@ -100,15 +100,15 @@ const ItemTypes = {
 };
 
 interface DraggableSubCategoryProps {
-  sub: { id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string };
+  sub: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string };
   index: number;
-  parentId: string;
-  moveSubCategory: (parentId: string, dragIndex: number, hoverIndex: number) => void;
+  parentId: number;
+  moveSubCategory: (parentId: number, dragIndex: number, hoverIndex: number) => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, onDelete }: DraggableSubCategoryProps) {
+  function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, onDelete }: DraggableSubCategoryProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -136,7 +136,7 @@ function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, o
 
   const [, drop] = useDrop({
     accept: ItemTypes.SUBCATEGORY,
-    hover(item: { index: number; parentId: string }, monitor) {
+    hover(item: { index: number; parentId: number }, monitor) {
       if (!ref.current) {
         return;
       }
@@ -237,7 +237,7 @@ function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, o
 }
 
 interface DraggableParentCategoryProps {
-  parent: { id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string };
+  parent: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string };
   index: number;
   moveParentCategory: (dragIndex: number, hoverIndex: number) => void;
   onDelete: () => void;
@@ -410,13 +410,13 @@ function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, 
                 e.currentTarget.style.backgroundColor = '#00A651';
                 e.currentTarget.style.borderColor = '#00A651';
                 const icon = e.currentTarget.querySelector('svg');
-                if (icon) (icon as HTMLElement).style.color = '#ffffff';
+                if (icon) icon.style.color = '#ffffff';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = '#ffffff';
                 e.currentTarget.style.borderColor = '#e5e7eb';
                 const icon = e.currentTarget.querySelector('svg');
-                if (icon) (icon as HTMLElement).style.color = '#6b7280';
+                if (icon) icon.style.color  = '#6b7280';
               }}
             >
               <Edit2 className="w-5 h-5" style={{ color: '#6b7280', transition: 'color 0.2s' }} />
@@ -441,13 +441,13 @@ function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, 
               e.currentTarget.style.backgroundColor = '#ef4444';
               e.currentTarget.style.borderColor = '#ef4444';
               const icon = e.currentTarget.querySelector('svg');
-              if (icon) (icon as HTMLElement).style.color = '#ffffff';
+              if (icon) icon.style.color  = '#ffffff';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '#ffffff';
               e.currentTarget.style.borderColor = '#fecaca';
               const icon = e.currentTarget.querySelector('svg');
-              if (icon) (icon as HTMLElement).style.color = '#ef4444';
+              if (icon) icon.style.color  = '#ef4444';
             }}
           >
             <Trash2 className="w-5 h-5" style={{ color: '#ef4444', transition: 'color 0.2s' }} />
@@ -478,309 +478,16 @@ export function AdminPage({
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'communities' | 'reports' | 'banners' | 'categories'>('dashboard');
   
   // 샘플 사용자 데이터
-  const [users, setUsers] = useState<UserData[]>([
-    {
-      id: '1',
-      username: '관리자',
-      email: 'admin',
-      createdAt: '2024-01-15T09:00:00Z',
-      isAdmin: true,
-      isSubscribed: true,
-    },
-    {
-      id: '2',
-      username: '테스트유저',
-      email: 'test',
-      createdAt: '2024-02-20T14:30:00Z',
-      isAdmin: false,
-      isSubscribed: true,
-    },
-    {
-      id: '3',
-      username: '테스트리더',
-      email: 'testleader',
-      createdAt: '2024-03-10T11:20:00Z',
-      isAdmin: false,
-      isSubscribed: false,
-    },
-    {
-      id: '4',
-      username: '김독서',
-      email: 'kimdokseo',
-      createdAt: '2024-03-15T16:45:00Z',
-      isAdmin: false,
-      isSubscribed: true,
-    },
-    {
-      id: '5',
-      username: '이운동',
-      email: 'leeundong',
-      createdAt: '2024-04-01T10:10:00Z',
-      isAdmin: false,
-      isSubscribed: false,
-    },
-    {
-      id: '6',
-      username: '박음악',
-      email: 'parkeumak',
-      createdAt: '2024-04-12T13:25:00Z',
-      isAdmin: false,
-      isSubscribed: true,
-    },
-    {
-      id: '7',
-      username: '최여행',
-      email: 'choiyeohaeng',
-      createdAt: '2024-05-05T08:50:00Z',
-      isAdmin: false,
-      isSubscribed: false,
-    },
-    {
-      id: '8',
-      username: '정요리',
-      email: 'jungyori',
-      createdAt: '2024-05-18T15:15:00Z',
-      isAdmin: false,
-      isSubscribed: true,
-    },
-    {
-      id: '9',
-      username: '강게임',
-      email: 'kanggame',
-      createdAt: '2024-06-02T12:40:00Z',
-      isAdmin: false,
-      isSubscribed: false,
-    },
-    {
-      id: '10',
-      username: '윤사진',
-      email: 'yoonsajin',
-      createdAt: '2024-06-20T09:30:00Z',
-      isAdmin: false,
-      isSubscribed: false,
-    },
-  ]);
+  const [users, setUsers] = useState<UserData[]>([]);
   
   // 샘플 모임 데이터
-  const [communities, setCommunities] = useState<CommunityData[]>([
-    {
-      id: '1',
-      title: '독서 모임',
-      category: '취미',
-      leaderName: '김독서',
-      memberCount: 15,
-      createdAt: '2024-03-15T16:45:00Z',
-      status: 'active',
-    },
-    {
-      id: '2',
-      title: '조깅 모임',
-      category: '운동',
-      leaderName: '이운동',
-      memberCount: 22,
-      createdAt: '2024-04-01T10:10:00Z',
-      status: 'active',
-    },
-    {
-      id: '3',
-      title: '기타 동호회',
-      category: '음악',
-      leaderName: '박음악',
-      memberCount: 8,
-      createdAt: '2024-04-12T13:25:00Z',
-      status: 'active',
-    },
-    {
-      id: '4',
-      title: '제주도 여행',
-      category: '여행',
-      leaderName: '최여행',
-      memberCount: 12,
-      createdAt: '2024-05-05T08:50:00Z',
-      status: 'pending',
-    },
-    {
-      id: '5',
-      title: '홈 베이킹',
-      category: '요리',
-      leaderName: '정요리',
-      memberCount: 18,
-      createdAt: '2024-05-18T15:15:00Z',
-      status: 'active',
-    },
-    {
-      id: '6',
-      title: '보드게임 클럽',
-      category: '게임',
-      leaderName: '강게임',
-      memberCount: 25,
-      createdAt: '2024-06-02T12:40:00Z',
-      status: 'active',
-    },
-    {
-      id: '7',
-      title: '사진 촬영 모임',
-      category: '사진',
-      leaderName: '윤사진',
-      memberCount: 14,
-      createdAt: '2024-06-20T09:30:00Z',
-      status: 'active',
-    },
-    {
-      id: '8',
-      title: '영어 스터디',
-      category: '학습',
-      leaderName: 'test',
-      memberCount: 10,
-      createdAt: '2024-07-01T11:00:00Z',
-      status: 'active',
-    },
-    {
-      id: '9',
-      title: '테니스 동호회',
-      category: '운동',
-      leaderName: '이운동',
-      memberCount: 16,
-      createdAt: '2024-07-10T14:20:00Z',
-      status: 'pending',
-    },
-    {
-      id: '100',
-      title: '[테스트] 두루두룹 운영진 모임',
-      category: '기타',
-      leaderName: 'testleader',
-      memberCount: 5,
-      createdAt: '2024-07-15T10:00:00Z',
-      status: 'active',
-    },
-  ]);
+  const [communities, setCommunities] = useState<CommunityData[]>([]);
   
   // 샘플 신고 데이터
-  const [reports, setReports] = useState<ReportData[]>([
-    {
-      id: 'report-1',
-      reporterName: '박음악',
-      reportedContent: '독서 모임 - 부적절한 게시글',
-      reportedUserId: '4', // 김독서
-      reportedUserName: '김독서',
-      reportedUserEmail: 'kimdokseo',
-      reason: '욕설 및 비방',
-      createdAt: '2024-07-20T10:30:00Z',
-      status: 'pending',
-    },
-    {
-      id: 'report-2',
-      reporterName: '정요리',
-      reportedContent: '조깅 모임 - 스팸 홍보',
-      reportedUserId: '5', // 이운동
-      reportedUserName: '이운동',
-      reportedUserEmail: 'leeundong',
-      reason: '스팸/홍보',
-      createdAt: '2024-07-18T14:15:00Z',
-      status: 'resolved',
-    },
-    {
-      id: 'report-3',
-      reporterName: '최여행',
-      reportedContent: '기타 동호회 - 사용자 김독서',
-      reportedUserId: '4', // 김독서
-      reportedUserName: '김독서',
-      reportedUserEmail: 'kimdokseo',
-      reason: '사기 의심',
-      createdAt: '2024-07-15T09:45:00Z',
-      status: 'pending',
-    },
-    {
-      id: 'report-4',
-      reporterName: '윤사진',
-      reportedContent: '홈 베이킹 모임 - 악의적인 댓글',
-      reportedUserId: '9', // 강게임
-      reportedUserName: '강게임',
-      reportedUserEmail: 'kanggame',
-      reason: '욕설 및 비방',
-      createdAt: '2024-07-22T16:20:00Z',
-      status: 'pending',
-    },
-    {
-      id: 'report-5',
-      reporterName: '이운동',
-      reportedContent: '사진 촬영 모임 - 개인정보 유출',
-      reportedUserId: '10', // 윤사진
-      reportedUserName: '윤사진',
-      reportedUserEmail: 'yoonsajin',
-      reason: '개인정보 침해',
-      createdAt: '2024-07-21T11:50:00Z',
-      status: 'resolved',
-    },
-    {
-      id: 'report-6',
-      reporterName: '강게임',
-      reportedContent: '제주도 여행 모임 - 금전 요구',
-      reportedUserId: '7', // 최여행
-      reportedUserName: '최여행',
-      reportedUserEmail: 'choiyeohaeng',
-      reason: '사기 의심',
-      createdAt: '2024-07-19T13:30:00Z',
-      status: 'pending',
-    },
-    {
-      id: 'report-7',
-      reporterName: '김독서',
-      reportedContent: '보드게임 클럽 - 부적절한 이미지',
-      reportedUserId: '9', // 강게임
-      reportedUserName: '강게임',
-      reportedUserEmail: 'kanggame',
-      reason: '음란물/선정성',
-      createdAt: '2024-07-23T09:15:00Z',
-      status: 'pending',
-    },
-  ]);
+  const [reports, setReports] = useState<ReportData[]>([]);
   
   // 배너 데이터
-  const [banners, setBanners] = useState<BannerData[]>([
-    {
-      id: 'banner-1',
-      title: '두루두룹 프리미엄 구독 홍보',
-      imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=200&fit=crop',
-      linkUrl: '/payment',
-      isActive: true,
-      createdAt: '2024-01-10T10:00:00Z',
-      order: 1,
-      position: 'Main',
-      startDate: '2024-01-10',
-      endDate: '2024-12-31',
-      clickCount: 1250,
-      description: '프리미엄 구독으로 무제한 AI 검색과 더 많은 기능을 즐겨보세요!',
-    },
-    {
-      id: 'banner-2',
-      title: '신규 모임 생성 이벤트',
-      imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=200&fit=crop',
-      linkUrl: 'https://example.com/very/long/url/path/to/event/page/with/many/parameters?utm_source=banner&utm_medium=display&utm_campaign=spring2024&session_id=abc123def456',
-      isActive: true,
-      createdAt: '2024-02-15T14:30:00Z',
-      order: 2,
-      position: 'Side',
-      startDate: '2024-02-15',
-      endDate: '2024-06-30',
-      clickCount: 820,
-      description: '새로운 소모임을 만들고 다양한 사람들과 함께하세요.',
-    },
-    {
-      id: 'banner-3',
-      title: '여름 특별 할인',
-      imageUrl: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&h=200&fit=crop',
-      linkUrl: '/payment',
-      isActive: false,
-      createdAt: '2024-03-20T09:15:00Z',
-      order: 3,
-      position: 'PopUp',
-      startDate: '2024-06-01',
-      endDate: '2024-08-31',
-      clickCount: 450,
-      description: '여름 시즌 한정! 구독료 30% 할인 혜택을 놓치지 마세요.',
-    },
-  ]);
+  const [banners, setBanners] = useState<BannerData[]>([]);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -788,27 +495,27 @@ export function AdminPage({
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showUserDetailModal, setShowUserDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [selectedCommunity, setSelectedCommunity] = useState<CommunityData | null>(null);
   const [showCommunityDetailModal, setShowCommunityDetailModal] = useState(false);
   const [showCommunityDeleteModal, setShowCommunityDeleteModal] = useState(false);
-  const [communityToDelete, setCommunityToDelete] = useState<string | null>(null);
-  const [reportToDelete, setReportToDelete] = useState<string | null>(null);
+  const [communityToDelete, setCommunityToDelete] = useState<number | null>(null);
+  const [reportToDelete, setReportToDelete] = useState<number | null>(null);
   const [showReportDeleteModal, setShowReportDeleteModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
-  const [userToBlock, setUserToBlock] = useState<{ userId: string; userName: string } | null>(null);
+  const [userToBlock, setUserToBlock] = useState<{ userId: number; userName: string } | null>(null);
   const [blockType, setBlockType] = useState<'temporary' | 'permanent' | null>(null);
   const [blockDays, setBlockDays] = useState<number>(7); // 기본값 7일
   const [toastMessage, setToastMessage] = useState<string>('삭제 되었습니다');
-  const [openReportDropdown, setOpenReportDropdown] = useState<string | null>(null);
+  const [openReportDropdown, setOpenReportDropdown] = useState<number | null>(null);
 
   // 배너 관리 상태
   const [selectedBanner, setSelectedBanner] = useState<BannerData | null>(null);
   const [showBannerModal, setShowBannerModal] = useState(false);
   const [showBannerDetailModal, setShowBannerDetailModal] = useState(false);
   const [showBannerDeleteModal, setShowBannerDeleteModal] = useState(false);
-  const [bannerToDelete, setBannerToDelete] = useState<string | null>(null);
+  const [bannerToDelete, setBannerToDelete] = useState<number | null>(null);
   const [bannerFormData, setBannerFormData] = useState({
     title: '',
     imageUrl: '',
@@ -825,53 +532,35 @@ export function AdminPage({
   const [showBannerErrorModal, setShowBannerErrorModal] = useState(false);
   const [bannerErrorMessage, setBannerErrorMessage] = useState('');
 
-  // 카테고리 관리 상태
-  const [categories, setCategories] = useState<{ id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string }[]>([
-    { id: '1', name: '독서', description: '책을 읽고 토론하는 모임', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    { id: '2', name: '운동', description: '건강한 운동 활동', createdAt: '2024-01-01T00:00:00Z', communityCount: 2, parentId: null },
-    { id: '3', name: '음악', description: '음악 관련 활동', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    { id: '4', name: '여행', description: '여행 계획 및 정보 공유', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    { id: '5', name: '요리', description: '요리 레시피 및 팁 공유', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    { id: '6', name: '게임', description: '게임 관련 모임', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    { id: '7', name: '사진', description: '사진 촬영 및 편집', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    { id: '8', name: '학습', description: '학습 및 자기계발', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    { id: '9', name: '기타', description: '기타 카테고리', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: null },
-    // 독서 소분류
-    { id: '10', name: '소설', description: '소설 읽기', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '1', iconUrl: 'https://images.unsplash.com/photo-1593882100241-aef1449fe351?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxub3ZlbCUyMGJvb2slMjBpY29ufGVufDF8fHx8MTc2OTc1MjAyMnww&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '11', name: '자기계발서', description: '자기계발 도서', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '1', iconUrl: 'https://images.unsplash.com/photo-1593882100241-aef1449fe351?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzZWxmJTIwaGVscCUyMGJvb2slMjBpY29ufGVufDF8fHx8MTc2OTc1MjAyMnww&ixlib=rb-4.1.0&q=80&w=400' },
-    // 운동 소분류
-    { id: '12', name: '축구', description: '축구 활동', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: '2', iconUrl: 'https://images.unsplash.com/photo-1760890518049-47b9822e1c89?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb2NjZXIlMjBiYWxsJTIwaWNvbnxlbnwxfHx8fDE3Njk2OTkxNTF8MA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '13', name: '요가', description: '요가 및 스트레칭', createdAt: '2024-01-01T00:00:00Z', communityCount: 1, parentId: '2', iconUrl: 'https://images.unsplash.com/photo-1758599880425-7862af0a4b50?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b2dhJTIwbWVkaXRhdGlvbiUyMGljb258ZW58MXx8fHwxNzY5NzUxNzM5fDA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '14', name: '러닝', description: '달리기 활동', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '2', iconUrl: 'https://images.unsplash.com/photo-1590646299178-1b26ab821e34?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxydW5uaW5nJTIwZXhlcmNpc2V8ZW58MXx8fHwxNzY5NjcwNzcxfDA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '15', name: '사이클', description: '자전거 라이딩', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '2', iconUrl: 'https://images.unsplash.com/photo-1631090626454-a0d8c2d02ee7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiaWN5Y2xlJTIwY3ljbGluZ3xlbnwxfHx8fDE3Njk3NTIwNDJ8MA&ixlib=rb-4.1.0&q=80&w=400' },
-    // 음악 소분류
-    { id: '16', name: '기타', description: '기타 연주', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '3', iconUrl: 'https://images.unsplash.com/photo-1760302356433-c4649245ab8b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxndWl0YXIlMjBtdXNpYyUyMGljb258ZW58MXx8fHwxNzY5NzUyMDMzfDA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '17', name: '피아노', description: '피아노 연주', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '3', iconUrl: 'https://images.unsplash.com/photo-1601701088665-a1e1b53d164c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaWFubyUyMGtleWJvYXJkJTIwaWNvbnxlbnwxfHx8fDE3Njk3NTIwMzN8MA&ixlib=rb-4.1.0&q=80&w=400' },
-    // 여행 소분류
-    { id: '18', name: '등산', description: '산 등반', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '4', iconUrl: 'https://images.unsplash.com/photo-1516570733062-ef4ea4643c45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMGhpa2luZyUyMGljb258ZW58MXx8fHwxNzY5NzUyMDMzfDA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '19', name: '해외여행', description: '해외 여행', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '4', iconUrl: 'https://images.unsplash.com/photo-1741762700358-0caffc392a7e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHRyYXZlbCUyMGljb258ZW58MXx8fHwxNzY5NzUyMDM0fDA&ixlib=rb-4.1.0&q=80&w=400' },
-    // 요리 소분류
-    { id: '20', name: '한식', description: '한국 음식', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '5', iconUrl: 'https://images.unsplash.com/photo-1617850606395-fb6c1f0ce918?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaGVmJTIwY29va2luZyUyMGhhdHxlbnwxfHx8fDE3Njk3NTIwNDB8MA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '21', name: '베이킹', description: '제과 제빵', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '5', iconUrl: 'https://images.unsplash.com/photo-1670843840225-2ffcaf483c01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWtlJTIwYmFraW5nfGVufDF8fHx8MTc2OTc1MjA0MXww&ixlib=rb-4.1.0&q=80&w=400' },
-    // 게임 소분류
-    { id: '22', name: '비디오게임', description: '콘솔/PC 게임', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '6', iconUrl: 'https://images.unsplash.com/photo-1611734242174-451181387ba8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnYW1pbmclMjBjb250cm9sbGVyJTIwaWNvbnxlbnwxfHx8fDE3Njk3NTIwMzV8MA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '23', name: '보드게임', description: '보드게임 모임', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '6', iconUrl: 'https://images.unsplash.com/photo-1769577063771-b83ebe4c4c13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxib2FyZCUyMGdhbWUlMjBpY29ufGVufDF8fHx8MTc2OTc1MjAzNXww&ixlib=rb-4.1.0&q=80&w=400' },
-    // 사진 소분류
-    { id: '24', name: '풍경사진', description: '풍경 촬영', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '7', iconUrl: 'https://images.unsplash.com/photo-1656699218644-a2dc232cb950?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW1lcmElMjBwaG90b2dyYXBoeSUyMGljb258ZW58MXx8fHwxNzY5Njc1MzE0fDA&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '25', name: '인물사진', description: '인물 촬영', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '7', iconUrl: 'https://images.unsplash.com/photo-1735827323331-4c95a1a702b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwb3J0cmFpdCUyMHBob3RvJTIwaWNvbnxlbnwxfHx8fDE3Njk3NTIwMzZ8MA&ixlib=rb-4.1.0&q=80&w=400' },
-    // 학습 소분류
-    { id: '26', name: '영어', description: '영어 학습', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '8', iconUrl: 'https://images.unsplash.com/photo-1645594287996-086e2217a809?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbmdsaXNoJTIwbGFuZ3VhZ2UlMjBpY29ufGVufDF8fHx8MTc2OTc1MjAzNnww&ixlib=rb-4.1.0&q=80&w=400' },
-    { id: '27', name: '프로그래밍', description: '코딩 학습', createdAt: '2024-01-01T00:00:00Z', communityCount: 0, parentId: '8', iconUrl: 'https://images.unsplash.com/photo-1565229284535-2cbbe3049123?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2RpbmclMjBwcm9ncmFtbWluZyUyMGljb258ZW58MXx8fHwxNzY5NzUyMDM3fDA&ixlib=rb-4.1.0&q=80&w=400' },
-  ]);
+  const [categories, setCategories] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string }[]>([]);
+  useEffect(() => {
+    loadCategories();
+  }, [])
+  const loadCategories = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/admin/categories', { headers });
+      const data = await res.json();
+      setCategories(data || [])
+    } catch (error) {
+      console.error('커뮤니티 조회 실패 : ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string } | null>(null);
-  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '', parentId: null as string | null, iconUrl: '' });
+  const [selectedCategory, setSelectedCategory] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string } | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '', parentId: null as number | null, iconUrl: '' });
   const [showCategoryDeleteModal, setShowCategoryDeleteModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
 
   // 소분류 순서 변경 함수
-  const moveSubCategory = (parentId: string, dragIndex: number, hoverIndex: number) => {
-    const subCategories = categories.filter(c => c.parentId === parentId);
+  const moveSubCategory = (parentId: number, dragIndex: number, hoverIndex: number) => {
+    const subCategories = categories.filter(c => c.no === parentId);
     const draggedItem = subCategories[dragIndex];
     
     // 드래그된 항목을 제거하고 새 위치에 삽입
@@ -880,7 +569,7 @@ export function AdminPage({
     updatedSubCategories.splice(hoverIndex, 0, draggedItem);
     
     // 전체 카테고리 목록에서 해당 부모의 소분류들만 순서 변경
-    const otherCategories = categories.filter(c => c.parentId !== parentId);
+    const otherCategories = categories.filter(c => c.no !== parentId);
     setCategories([...otherCategories, ...updatedSubCategories]);
   };
 
@@ -928,18 +617,19 @@ export function AdminPage({
   const loadUsers = async () => {
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('accessToken');
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/admin/users`,
+        `/api/admin/users`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken || publicAnonKey}`,
+            Authorization: `Bearer ${token}`
           },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.users || []);
+        setUsers(data || []);
       }
     } catch (error) {
       // Mock 데이터 사용 (Supabase 연결 실패 시)
@@ -952,18 +642,19 @@ export function AdminPage({
   const loadCommunities = async () => {
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('accessToken');
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/admin/communities`,
+        `/api/admin/clubs`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken || publicAnonKey}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setCommunities(data.communities || []);
+        setCommunities(data || []);
       }
     } catch (error) {
       // Mock 데이터 사용 (Supabase 연결 실패 시)
@@ -976,18 +667,19 @@ export function AdminPage({
   const loadBanners = async () => {
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('accessToken');
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/admin/banners`,
+        `/api/admin/banners`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken || publicAnonKey}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setBanners(data.banners || []);
+        setBanners(data || []);
       }
     } catch (error) {
       // Mock 데이터 사용 (Supabase 연결 실패 시)
@@ -1034,12 +726,12 @@ export function AdminPage({
 
     if (selectedBanner) {
       // 수정
-      setBanners(banners.map(b => b.id === selectedBanner.id ? { ...b, ...bannerData } : b));
+      setBanners(banners.map(b => b.no === selectedBanner.no ? { ...b, ...bannerData } : b));
       setToastMessage('배너가 수정되었습니다');
     } else {
       // 추가
       const newBanner = {
-        id: `banner-${Date.now()}`,
+        no: 0,
         createdAt: new Date().toISOString(),
         ...bannerData,
       };
@@ -1052,9 +744,9 @@ export function AdminPage({
     setTimeout(() => setShowToast(false), 2000);
   };
 
-  const deleteBanner = (bannerId: string) => {
+  const deleteBanner = (bannerId: number) => {
     // 프론트엔드 전용 배너 삭제
-    setBanners(banners.filter(b => b.id !== bannerId));
+    setBanners(banners.filter(b => b.no !== bannerId));
     setToastMessage('배너가 삭제되었습니다');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
@@ -1118,30 +810,30 @@ export function AdminPage({
   );
 
   // 신고 당한 횟수 계산 함수
-  const getReportCount = (userId?: string) => {
+  const getReportCount = (userId?: number) => {
     if (!userId) return 0;
     return reports.filter(r => r.reportedUserId === userId).length;
   };
 
   // ��한 변경 함수
-  const handleToggleSubscription = (userId: string) => {
+  const handleToggleSubscription = (userId: number) => {
     setUsers(users.map(u => 
-      u.id === userId ? { ...u, isSubscribed: !u.isSubscribed } : u
+      u.no === userId ? { ...u, isSubscribed: !u.isSubscribed } : u
     ));
     setOpenDropdown(null);
     alert('권한이 변경되었습니다.');
   };
 
   // 사용자 삭제 함수
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(u => u.id !== userId));
+  const handleDeleteUser = (userId: number) => {
+    setUsers(users.filter(u => u.no !== userId));
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
   };
 
   // 모임 삭제 함수
-  const handleDeleteCommunity = (communityId: string) => {
-    setCommunities(communities.filter(c => c.id !== communityId));
+  const handleDeleteCommunity = (communityId: number) => {
+    setCommunities(communities.filter(c => c.no !== communityId));
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
   };
@@ -1331,7 +1023,7 @@ export function AdminPage({
                       {filteredUsers.length > 0 ? (
                         filteredUsers.map((user) => (
                           <tr 
-                            key={user.id}
+                            key={user.no}
                             onClick={() => {
                               setSelectedUser(user);
                               setShowUserDetailModal(true);
@@ -1357,7 +1049,7 @@ export function AdminPage({
                                 className={styles.deleteButton}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setUserToDelete(user.id);
+                                  setUserToDelete(user.no);
                                   setShowDeleteModal(true);
                                 }}
                               >
@@ -1415,7 +1107,7 @@ export function AdminPage({
                       {filteredCommunities.length > 0 ? (
                         filteredCommunities.map((community) => (
                           <tr 
-                            key={community.id}
+                            key={community.no}
                             onClick={() => {
                               setSelectedCommunity(community);
                               setShowCommunityDetailModal(true);
@@ -1432,7 +1124,7 @@ export function AdminPage({
                                 className={styles.deleteButton}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setCommunityToDelete(community.id);
+                                  setCommunityToDelete(community.no);
                                   setShowCommunityDeleteModal(true);
                                 }}
                               >
@@ -1489,7 +1181,7 @@ export function AdminPage({
                     <tbody>
                       {filteredReports.length > 0 ? (
                         filteredReports.map((report) => (
-                          <tr key={report.id}>
+                          <tr key={report.no}>
                             <td>{report.reportedUserName || '알 수 없음'}</td>
                             <td>{report.reportedUserEmail || '알 수 없음'}</td>
                             <td>{report.reason}</td>
@@ -1505,13 +1197,13 @@ export function AdminPage({
                                   className={styles.actionButton}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setOpenReportDropdown(openReportDropdown === report.id ? null : report.id);
+                                    setOpenReportDropdown(openReportDropdown === report.no ? null : report.no);
                                   }}
                                   title="작업"
                                 >
                                   <MoreVertical className="w-4 h-4" />
                                 </button>
-                                {openReportDropdown === report.id && (
+                                {openReportDropdown === report.no && (
                                   <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
                                     <button
                                       className={styles.dropdownItem}
@@ -1530,7 +1222,7 @@ export function AdminPage({
                                       className={styles.dropdownItem}
                                       onClick={() => {
                                         // 보류 - 목록에서만 제거
-                                        setReports(reports.filter(r => r.id !== report.id));
+                                        setReports(reports.filter(r => r.no !== report.no));
                                         setToastMessage('신고가 보류되었습니다');
                                         setShowToast(true);
                                         setTimeout(() => setShowToast(false), 2000);
@@ -1543,7 +1235,7 @@ export function AdminPage({
                                     <button
                                       className={styles.dropdownItem}
                                       onClick={() => {
-                                        setReportToDelete(report.id);
+                                        setReportToDelete(report.no);
                                         setShowReportDeleteModal(true);
                                         setOpenReportDropdown(null);
                                       }}
@@ -1622,7 +1314,7 @@ export function AdminPage({
                     {banners.length > 0 ? (
                       banners.sort((a, b) => a.order - b.order).map((banner) => (
                         <tr 
-                          key={banner.id} 
+                          key={banner.no} 
                           style={{ opacity: banner.isActive ? 1 : 0.4, cursor: 'pointer' }}
                           onClick={() => {
                             setSelectedBanner(banner);
@@ -1658,7 +1350,7 @@ export function AdminPage({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setBanners(banners.map(b =>
-                                  b.id === banner.id ? { ...b, position: b.position === 'popup' ? 'main' : 'popup' } : b
+                                  b.no === banner.no ? { ...b, position: b.position === 'PopUp' ? 'Main' : 'PopUp' } : b
                                 ));
                               }}
                               style={{
@@ -1666,12 +1358,12 @@ export function AdminPage({
                                 borderRadius: '12px',
                                 fontSize: '0.75rem',
                                 fontWeight: '600',
-                                backgroundColor: banner.position === 'popup' ? '#e0e7ff' : '#ffedd5',
-                                color: banner.position === 'popup' ? '#4f46e5' : '#ea580c',
+                                backgroundColor: banner.position === 'PopUp' ? '#e0e7ff' : '#ffedd5',
+                                color: banner.position === 'PopUp' ? '#4f46e5' : '#ea580c',
                                 cursor: 'pointer',
                               }}
                             >
-                              {banner.position === 'popup' ? 'Popup' : 'Main'}
+                              {banner.position === 'PopUp' ? 'Popup' : 'Main'}
                             </span>
                           </td>
                           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
@@ -1680,7 +1372,7 @@ export function AdminPage({
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setBanners(banners.map(b =>
-                                    b.id === banner.id ? { ...b, isActive: !b.isActive } : b
+                                    b.no === banner.no ? { ...b, isActive: !b.isActive } : b
                                   ));
                                 }}
                                 style={{
@@ -1727,7 +1419,7 @@ export function AdminPage({
                                 className={styles.deleteButton}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setBannerToDelete(banner.id);
+                                  setBannerToDelete(banner.no);
                                   setShowBannerDeleteModal(true);
                                 }}
                                 title="삭제"
@@ -1754,7 +1446,7 @@ export function AdminPage({
           {/* 카테고리 관리 탭 */}
           {activeTab === 'categories' && (() => {
             const parentCategories = categories.filter(c => !c.parentId);
-            const getSubCategories = (parentId: string) => categories.filter(c => c.parentId === parentId);
+            const getSubCategories = (parentId: number) => categories.filter(c => c.no === parentId);
             
             return (
               <div className={styles.tabContent}>
@@ -1777,22 +1469,22 @@ export function AdminPage({
 
                 {/* 카테고리 카드 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  {parentCategories.map((parent, parentIndex) => {
-                    const subCategories = getSubCategories(parent.id);
+                {parentCategories.map((parent, parentIndex) => {
+                    const subCategories = getSubCategories(parent.no);
                     
                     return (
                       <DraggableParentCategory
-                        key={parent.id}
+                        key={parent.no}
                         parent={parent}
                         index={parentIndex}
                         moveParentCategory={moveParentCategory}
                         onEdit={() => {
                           setSelectedCategory(parent);
-                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: parent.parentId || null, iconUrl: parent.iconUrl || '' });
+                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: parent.no || null, iconUrl: parent.iconUrl || '' });
                           setShowCategoryModal(true);
                         }}
                         onDelete={() => {
-                          setCategoryToDelete(parent.id);
+                          setCategoryToDelete(parent.no);
                           setShowCategoryDeleteModal(true);
                         }}
                       >
@@ -1805,18 +1497,18 @@ export function AdminPage({
                         }}>
                           {subCategories.map((sub, index) => (
                             <DraggableSubCategory
-                              key={sub.id}
+                              key={sub.no}
                               sub={sub}
                               index={index}
-                              parentId={parent.id}
+                              parentId={parent.no}
                               moveSubCategory={moveSubCategory}
                               onEdit={() => {
                                 setSelectedCategory(sub);
-                                setCategoryFormData({ name: sub.name, description: sub.description, parentId: sub.parentId || null, iconUrl: sub.iconUrl || '' });
+                                setCategoryFormData({ name: sub.name, description: sub.description, parentId: sub.no || null, iconUrl: sub.iconUrl || '' });
                                 setShowCategoryModal(true);
                               }}
                               onDelete={() => {
-                                setCategoryToDelete(sub.id);
+                                setCategoryToDelete(sub.no);
                                 setShowCategoryDeleteModal(true);
                               }}
                             />
@@ -1837,7 +1529,7 @@ export function AdminPage({
                             }}
                             onClick={() => {
                               setSelectedCategory(null);
-                              setCategoryFormData({ name: '', description: '', parentId: parent.id, iconUrl: '' });
+                              setCategoryFormData({ name: '', description: '', parentId: parent.no, iconUrl: '' });
                               setShowCategoryModal(true);
                             }}
                             onMouseEnter={(e) => {
@@ -1847,7 +1539,7 @@ export function AdminPage({
                               e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 166, 81, 0.15)';
                               const icon = e.currentTarget.querySelector('svg');
                               const text = e.currentTarget.querySelector('div');
-                              if (icon) (icon as HTMLElement).style.color = '#00A651';
+                              if (icon) (icon).style.color = '#00A651';
                               if (text) (text as HTMLElement).style.color = '#00A651';
                             }}
                             onMouseLeave={(e) => {
@@ -1857,7 +1549,7 @@ export function AdminPage({
                               e.currentTarget.style.boxShadow = 'none';
                               const icon = e.currentTarget.querySelector('svg');
                               const text = e.currentTarget.querySelector('div');
-                              if (icon) (icon as HTMLElement).style.color = '#9ca3af';
+                              if (icon) (icon).style.color = '#9ca3af';
                               if (text) (text as HTMLElement).style.color = '#9ca3af';
                             }}
                           >
@@ -1934,13 +1626,13 @@ export function AdminPage({
                 <div className={styles.detailLabel}>신고 횟수</div>
                 <div className={styles.detailValue}>
                   <span className={styles.reportCountBadge}>
-                    {getReportCount(selectedUser.id)}회
+                    {getReportCount(selectedUser.no)}회
                   </span>
                 </div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>사용자 ID</div>
-                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedUser.id}</div>
+                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedUser.no}</div>
               </div>
             </div>
             <div className={styles.modalFooter}>
@@ -2050,7 +1742,7 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>모임 ID</div>
-                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedCommunity.id}</div>
+                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedCommunity.no}</div>
               </div>
             </div>
             <div className={styles.modalFooter}>
@@ -2065,7 +1757,7 @@ export function AdminPage({
                 onClick={() => {
                   // 모임 상세 페이지로 이동
                   if (onNavigateToCommunity) {
-                    onNavigateToCommunity(selectedCommunity.id);
+                    onNavigateToCommunity(selectedCommunity.no);
                   }
                   setShowCommunityDetailModal(false);
                 }}
@@ -2117,7 +1809,7 @@ export function AdminPage({
 
       {/* 신고 삭제 확인 모달 */}
       {showReportDeleteModal && reportToDelete && (() => {
-        const report = reports.find(r => r.id === reportToDelete);
+        const report = reports.find(r => r.no === reportToDelete);
         return (
           <div className={styles.modalOverlay} onClick={() => setShowReportDeleteModal(false)}>
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -2154,10 +1846,10 @@ export function AdminPage({
                   onClick={() => {
                     // 신고된 사용자가 있으면 삭제
                     if (report?.reportedUserId) {
-                      setUsers(users.filter(u => u.id !== report.reportedUserId));
+                      setUsers(users.filter(u => u.no !== report.reportedUserId));
                     }
                     // 신고 기록 삭제
-                    setReports(reports.filter(r => r.id !== reportToDelete));
+                    setReports(reports.filter(r => r.no !== reportToDelete));
                     setShowReportDeleteModal(false);
                     setShowToast(true);
                     setTimeout(() => setShowToast(false), 2000);
@@ -2256,9 +1948,9 @@ export function AdminPage({
                   if (blockType && accessToken) {
                     try {
                       const response = await fetch(
-                        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/admin/users/${userToBlock.userId}/block`,
+                        `/api/admin/reports?userNo=${userToBlock.userId}`,
                         {
-                          method: 'POST',
+                          method: 'DELETE',
                           headers: {
                             'Content-Type': 'application/json',
                             Authorization: `Bearer ${accessToken}`,
@@ -2777,7 +2469,7 @@ export function AdminPage({
                   color: '#6b7280',
                 }}>
                   {categoryFormData.parentId 
-                    ? `소분류 (상위: ${categories.find(c => c.id === categoryFormData.parentId)?.name || '알 수 없음'})` 
+                    ? `소분류 (상위: ${categories.find(c => c.no === categoryFormData.parentId)?.name || '알 수 없음'})` 
                     : '대분류'}
                 </div>
               </div>
@@ -2843,7 +2535,7 @@ export function AdminPage({
                   if (selectedCategory) {
                     // 수정
                     setCategories(categories.map(c =>
-                      c.id === selectedCategory.id
+                      c.no === selectedCategory.no
                         ? { ...c, name: categoryFormData.name, description: categoryFormData.description, parentId: categoryFormData.parentId, iconUrl: categoryFormData.iconUrl }
                         : c
                     ));
@@ -2851,7 +2543,7 @@ export function AdminPage({
                   } else {
                     // 추가
                     const newCategory = {
-                      id: String(Date.now()),
+                      no: categoryFormData.parentId,
                       name: categoryFormData.name,
                       description: categoryFormData.description,
                       createdAt: new Date().toISOString(),
@@ -2893,7 +2585,7 @@ export function AdminPage({
               <p className={styles.modalText}>
                 정말로 이 카테고리를 삭제하시겠습니까?
                 {(() => {
-                  const category = categories.find(c => c.id === categoryToDelete);
+                  const category = categories.find(c => c.no === categoryToDelete);
                   return category && category.communityCount > 0 ? (
                     <><br /><span style={{ color: '#ef4444', fontWeight: '600' }}>
                       현재 {category.communityCount}개의 모임이 이 카테고리를 사용 중입니다.
@@ -2912,7 +2604,7 @@ export function AdminPage({
               <button
                 className={styles.modalButtonPrimary}
                 onClick={() => {
-                  setCategories(categories.filter(c => c.id !== categoryToDelete));
+                  setCategories(categories.filter(c => c.no !== categoryToDelete));
                   setShowCategoryDeleteModal(false);
                   setToastMessage('카테고리가 삭제되었습니다');
                   setShowToast(true);

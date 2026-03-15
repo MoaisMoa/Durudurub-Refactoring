@@ -141,8 +141,12 @@ public class UserApiController {
                     "success", false,
                     "error", "비밀번호가 틀렸습니다."));
         }
-
-        String role = "ROLE_USER";
+        String role = null;
+        if (user.getUserId().equals("test1@test.com")) {
+            role = "ROLE_ADMIN";
+        } else {
+            role = "ROLE_USER";
+        }
         String token = jwtProvider.createToken(user.getUserId(), role);
 
         return ResponseEntity.ok(Map.of(

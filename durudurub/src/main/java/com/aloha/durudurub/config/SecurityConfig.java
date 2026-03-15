@@ -47,7 +47,7 @@ public class SecurityConfig {
                                 "/img/**",
                                 "/uploads/**"
                         ).permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/club/create", "/club/*/edit", "/club/*/delete").authenticated()
                         .requestMatchers("/club/*/board/**").authenticated()
                         .requestMatchers("/users/mypage/**").authenticated()

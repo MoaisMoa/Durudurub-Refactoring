@@ -9,6 +9,7 @@ import { AppProvider, useApp } from "./contexts/AppContext";
 import { MyPage } from "./pages/mypage/MyPage";
 import { MyPageWrapper } from "./pages/mypage/MyPageWrapper";
 import { MyMeetingsWrapper } from "./pages/mypage/MyMeetingsWrapper";
+import { AdminPageWrapper, FavoritesPageWrapper } from "./pages/other/OtherPagesWrapper";
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -55,6 +56,16 @@ function AppRoutes() {
       <Route 
         path="/meetings"
         element={ <MyMeetingsWrapper />}
+      />
+
+      <Route 
+        path="/favorites"
+        element={ <FavoritesPageWrapper />}
+      />
+
+            <Route 
+        path="/admin"
+        element={ <AdminPageWrapper />}
       />
     </Routes>
   );

@@ -373,13 +373,13 @@ public class MypageApiController {
     //------------------------------
     // 즐겨찾기
     @GetMapping("/favorites")
-    public String favorites(
-        Model model,
+    @ResponseBody
+    public ResponseEntity<List<Club>> favorites(
         Principal principal
     ) throws Exception{
 
         if (principal == null) {
-            return "redirect:/login";
+            return ResponseEntity.badRequest().build();
         }
 
         User user = userService.selectByUserId(principal.getName());
@@ -387,9 +387,8 @@ public class MypageApiController {
 
         List<Club> favoriteClubs= likeService.favoriteList(userNo);
 
-        model.addAttribute("favoriteClubs", favoriteClubs);
         log.info("****************favoriteClubs: {}", favoriteClubs);
 
-        return "mypage/favorites";
+        return ResponseEntity.ok(favoriteClubs);
     }
 }
