@@ -5,7 +5,6 @@ import com.aloha.durudurub.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +14,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,60 +39,56 @@ public class AdminApiController {
     }
 
     // dashboard (조각)
-    @GetMapping("/fragment/dashboard")
-    public String dashboard(Model model) {
+    @GetMapping("/dashboard")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> dashboard() {
+
+        Map<String, Object> result = new HashMap<>();
         
         // 1. 통계 : 사용자(totalUsers), 모임(totalClubs), 신고(totalReports)
         int totalUsers = userService.countAll();
         int totalClubs = clubService.count();
         int totalReports = reportService.countList();
-        model.addAttribute("totalUsers", totalUsers);
-        model.addAttribute("totalClubs", totalClubs);
-        model.addAttribute("totalReports", totalReports);
+
+        result.put("totalUsers", totalUsers);
+        result.put("totalClubs", totalClubs);
+        result.put("totalReports", totalReports);
+
 
         // 2. 최근 활동 : 리스트(activities)
         // 최근 활동이 없으면, 리스트 조회X (카드 자체X)
         // 2-1 오늘 생성된 모임
         Club lastestClub = clubService.findLatestClub();
-        String lastestClubTitle = (lastestClub != null) ? lastestClub.getTitle() : null;
-        String lastestClubTime = (lastestClub != null && lastestClub.getCreatedAt() != null)
+
+        result.put("lastestClubTitle", 
+            lastestClub != null ? lastestClub.getTitle() : null);
+
+        result.put("lastestClubTime", 
+        lastestClub != null && lastestClub.getCreatedAt() != null
             ? daysAgo(lastestClub.getCreatedAt())
-            : null;
-        if (lastestClub == null) {
-            String lastestClubMsg = "새로 가입된 모임이 없습니다";
-            model.addAttribute("lastestClubMsg", lastestClubMsg);
-        }
-        model.addAttribute("lastestClubTitle", lastestClubTitle);
-        model.addAttribute("lastestClubTime", lastestClubTime);
+            : null);
 
         // 2-2 신규가입
         int totalNew = userService.countNew();
         User lastestUser = userService.findLastestUser();
-        String lastestUserTime = (lastestUser != null && lastestUser.getCreatedAt() != null)
-            ? daysAgo(lastestUser.getCreatedAt())
-            : null;
-        if (totalNew == 0) {
-            String lastestUserMsg = "새로 가입한 사용자가 없습니다";
-            model.addAttribute("lastestUserMsg", lastestUserMsg);
-        }
-        model.addAttribute("totalNew", totalNew);
-        model.addAttribute("lastestUserTime", lastestUserTime);
 
+        result.put("totalNew", totalNew);
+        result.put("lastestUser", 
+        lastestUser != null && lastestUser.getCreatedAt() != null
+            ? daysAgo(lastestUser.getCreatedAt())
+            : null);
          
         // 2-3 신고 접수 (아직 기능X)
         int totalNewReports = reportService.countNewReports();
         UserBan lastestUserBan = reportService.findLastestUserBan();
-        String lastestReportsTime = (lastestUserBan != null && lastestUserBan.getCreatedAt() != null)
-            ? daysAgo(lastestUserBan.getCreatedAt())
-            : null;
-        if (totalNewReports == 0) {
-            String lastestReportMsg = "새로 접수된 신고가 없습니다";
-            model.addAttribute("lastestReportMsg", lastestReportMsg);
-        }
-        model.addAttribute("totalNewReports", totalNewReports);
-        model.addAttribute("lastestReportsTime", lastestReportsTime);
 
-        return "admin/fragments/dashboard";
+        result.put("totalNewReports", totalNewReports);
+        result.put("lastestUserBan", 
+            lastestUserBan != null && lastestUserBan.getCreatedAt() != null
+            ? daysAgo(lastestUserBan.getCreatedAt())
+            : null);
+
+        return ResponseEntity.ok(result);
     }
     
     private String daysAgo(Date time) {

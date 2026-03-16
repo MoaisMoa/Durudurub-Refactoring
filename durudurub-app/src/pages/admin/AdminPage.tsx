@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import styles from '@/pages/admin/AdminPage.module.css';
 import { Navbar } from '@/components/header/Navbar';
+import { data } from 'react-router-dom';
 // import { projectId, publicAnonKey } from 'utils/supabase/info';
 
 interface AdminPageProps {
@@ -48,50 +49,64 @@ interface AdminPageProps {
 }
 
 interface UserData {
-  no: number;
+  userNo: number;
   username: string;
-  email: string;
+  userId: string;
   createdAt: string;
-  isAdmin: boolean;
+  admin: boolean;
   isSubscribed?: boolean;
-  reportCount?: number; // 신고 횟수
+  reportCountAtBan?: number; // 신고 횟수
 }
 
 interface CommunityData {
   no: number;
+  hostNo: number;
   title: string;
-  category: string;
-  leaderName: string;
-  memberCount: number;
+  category: { no: number; name: string };
+  host: { username: string; };
+  currentMembers: number;
   createdAt: string;
   status: 'active' | 'pending' | 'inactive';
 }
 
 interface ReportData {
   no: number;
-  reporterName: string;
-  reportedContent: string;
-  reportedUserId?: number; // 신고된 사용자 ID
-  reportedUserName?: string; // 신고된 사용자 이름
-  reportedUserEmail?: string; // 신고된 사용자 이메일
+  user: {
+    no: number;
+    userId: string;
+    username: string;
+  }
+
   reason: string;
+  reportCountAtBan: number;
+  banType: 'PERMANENT' | 'TEMPORARY';
+  banEndDate: string | null;
+
+  isActive: 'Y' | 'N';
+
   createdAt: string;
-  status: 'pending' | 'resolved';
+  updatedAt: string;
 }
 
 interface BannerData {
   no: number;
   title: string;
+
   imageUrl: string;
   linkUrl: string;
+
   isActive: boolean;
+  position: 'MAIN' | 'POPUP';
+
+  seq: number;
+  clickCount: number;
+  description?: string | null;
+
   createdAt: string;
-  order: number;
-  position: 'Main' | 'Side' | 'PopUp';
+  // updateAt: string;
+
   startDate: string;
   endDate: string;
-  clickCount: number;
-  description?: string; // 배너 설명 (선택 사항)
 }
 
 const ItemTypes = {
@@ -488,6 +503,9 @@ export function AdminPage({
   
   // 배너 데이터
   const [banners, setBanners] = useState<BannerData[]>([]);
+
+  // 대시 보드
+  const [activity, setActivity] = useState<any>({});
   
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -504,7 +522,7 @@ export function AdminPage({
   const [reportToDelete, setReportToDelete] = useState<number | null>(null);
   const [showReportDeleteModal, setShowReportDeleteModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
-  const [userToBlock, setUserToBlock] = useState<{ userId: number; userName: string } | null>(null);
+  const [userToBlock, setUserToBlock] = useState<{ userId: string; userName: string } | null>(null);
   const [blockType, setBlockType] = useState<'temporary' | 'permanent' | null>(null);
   const [blockDays, setBlockDays] = useState<number>(7); // 기본값 7일
   const [toastMessage, setToastMessage] = useState<string>('삭제 되었습니다');
@@ -521,12 +539,12 @@ export function AdminPage({
     imageUrl: '',
     linkUrl: '',
     isActive: true,
-    order: 1,
-    position: 'Main' as 'Main' | 'Side' | 'PopUp',
-    startDate: '',
-    endDate: '',
+    seq: 1,
+    position: 'MAIN' as 'MAIN' | 'POPUP',
+    startDate: null as string | null,
+    endDate: null as string | null,
     clickCount: 0,
-    description: '',
+    description: '' as string | null,
   });
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [showBannerErrorModal, setShowBannerErrorModal] = useState(false);
@@ -596,6 +614,8 @@ export function AdminPage({
       loadUsers();
     } else if (isAdmin && activeTab === 'communities') {
       loadCommunities();
+    } else if (isAdmin && activeTab === 'reports') {
+      loadBan();
     } else if (isAdmin && activeTab === 'banners') {
       loadBanners();
     }
@@ -613,6 +633,29 @@ export function AdminPage({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openDropdown, openReportDropdown]);
+
+  useEffect(() => {
+    loadActivity();
+  },[]);
+
+  // 대시보드
+  const loadActivity = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch("/api/admin/dashboard", { headers });
+      console.log("res ??? ", res);
+      const data = await res.json()
+      console.log("userData ??? ", data)
+      setActivity(data)
+    } catch (error) {
+      console.error('관리자 대시보드 불러오는 중 오류: ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const loadUsers = async () => {
     setLoading(true);
@@ -664,6 +707,32 @@ export function AdminPage({
     }
   };
 
+  const loadBan = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const response = await fetch(
+        `/api/admin/reports`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setReports(data || []);
+      }
+      console.log("response status", response.status)
+    } catch (error) {
+      // Mock 데이터 사용 (Supabase 연결 실패 시)
+      console.log('모임 목록: Mock 데이터 사용 중');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadBanners = async () => {
     setLoading(true);
     try {
@@ -679,7 +748,8 @@ export function AdminPage({
 
       if (response.ok) {
         const data = await response.json();
-        setBanners(data || []);
+        console.log("bannerList >>>>> ", data)
+        setBanners(data);
       }
     } catch (error) {
       // Mock 데이터 사용 (Supabase 연결 실패 시)
@@ -688,6 +758,70 @@ export function AdminPage({
       setLoading(false);
     }
   };
+
+  const handleToggleBannerPosition = async (
+    e: React.MouseEvent,
+    banner: BannerData
+  ) => {
+    e.stopPropagation();
+
+    const newPosition = banner.position === 'MAIN' ? 'POPUP' : 'MAIN';
+
+    try {
+      const token = sessionStorage.getItem('accessToken')
+      const res = await fetch(`/api/admin/banners/${banner.no}/position`, { 
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({position: newPosition})
+      });
+      
+      if (!res.ok) throw new Error("배너 위치 변경 실패");
+
+      setBanners(prev =>
+        prev.map(b =>
+          b.no === banner.no ? { ...b, position: newPosition } : b
+        )
+      );
+      console.log("res >>>> ", res)
+    } catch (error) {
+      console.error("배너 위치 변경 오류", error);
+    }
+  }
+
+  const handleToggleBannerIsActivity = async (
+    e: React.MouseEvent,
+    banner: BannerData
+  ) => {
+    e.stopPropagation();
+
+    const newActivity = !banner.isActive;
+
+    try {
+      const token = sessionStorage.getItem('accessToken')
+      const res = await fetch(`/api/admin/banners/${banner.no}/active`, { 
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({isActive: newActivity ? 'Y' : 'N'})
+      });
+      
+      if (!res.ok) throw new Error("배너 활성화 변경 실패");
+
+      setBanners(prev =>
+        prev.map(b =>
+          b.no === banner.no ? { ...b, isActive: newActivity } : b
+        )
+      );
+      console.log("res >>>> ", res)
+    } catch (error) {
+      console.error("배너 활성화 변경 오류", error);
+    }
+  }
 
   const saveBanner = () => {
     // 프론트엔드 전용 배너 저장
@@ -716,7 +850,7 @@ export function AdminPage({
       imageUrl,
       linkUrl: bannerFormData.linkUrl,
       isActive: bannerFormData.isActive,
-      order: bannerFormData.order,
+      seq: bannerFormData.seq,
       position: bannerFormData.position,
       startDate: bannerFormData.startDate,
       endDate: bannerFormData.endDate,
@@ -785,57 +919,119 @@ export function AdminPage({
   }
 
   // 대시보드 통계 (목업 데이터)
-  const stats = {
-    totalUsers: 1247,
-    totalCommunities: 89,
-    totalReports: 23,
-  };
+  // const stats = {
+  //   totalUsers: 1247,
+  //   totalCommunities: 89,
+  //   totalReports: 23,
+  // };
 
   const filteredUsers = users.filter(
     (u) =>
       u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+      u.userId.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
+  console.log(filteredUsers);
   const filteredCommunities = communities.filter(
     (c) =>
       c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.category.toLowerCase().includes(searchTerm.toLowerCase())
+    c.category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  console.log(filteredCommunities);
 
   const filteredReports = reports.filter(
     (r) =>
-      r.reportedUserName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.reason.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  console.log("filteredReports>>>> ", filteredReports);
 
   // 신고 당한 횟수 계산 함수
-  const getReportCount = (userId?: number) => {
-    if (!userId) return 0;
-    return reports.filter(r => r.reportedUserId === userId).length;
-  };
+  // const getReportCount = (userId?: string) => {
+  //   if (!userId) return 0;
+  //   return reports.filter(r => r.user.userId === userId).length;
+  // };
 
   // ��한 변경 함수
   const handleToggleSubscription = (userId: number) => {
     setUsers(users.map(u => 
-      u.no === userId ? { ...u, isSubscribed: !u.isSubscribed } : u
+      u.userNo === userId ? { ...u, isSubscribed: !u.isSubscribed } : u
     ));
     setOpenDropdown(null);
     alert('권한이 변경되었습니다.');
   };
 
   // 사용자 삭제 함수
-  const handleDeleteUser = (userId: number) => {
-    setUsers(users.filter(u => u.no !== userId));
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
+  const handleDeleteUser = async (userNo: number) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/admin/users/${userNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+      if (!res.ok) {
+        throw new Error("삭제 실패");
+      }
+
+      setUsers(users.filter(u => u.userNo !== userNo));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+    } catch (error) {
+      console.error("유저 삭제 실패", error);
+    }
   };
 
   // 모임 삭제 함수
-  const handleDeleteCommunity = (communityId: number) => {
-    setCommunities(communities.filter(c => c.no !== communityId));
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
+  const handleDeleteCommunity = async (clubNo: number) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/admin/clubs/${clubNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+      if (!res.ok) {
+        throw new Error("삭제 실패");
+      }
+
+      setCommunities(communities.filter(c => c.no !== clubNo));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+    } catch (error) {
+      console.error("유저 삭제 실패", error);
+    }
+  };
+
+  // 신고된 사용자 삭제 함수
+  const handleDeleteReport  = async (userNo: number) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/admin/reports/${userNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+      if (!res.ok) {
+        throw new Error("삭제 실패");
+      }
+
+      // 신고 목록에서 제거
+      setReports(prev => prev.filter(r => r.no !== userNo));
+
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+    } catch (error) {
+      console.error("유저 삭제 실패", error);
+    }
   };
 
   return (
@@ -926,7 +1122,7 @@ export function AdminPage({
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>전체 사용자</p>
-                    <p className={styles.statValue}>{stats.totalUsers.toLocaleString()}</p>
+                    <p className={styles.statValue}>{activity.totalUsers}</p>
                   </div>
                 </div>
 
@@ -936,7 +1132,7 @@ export function AdminPage({
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>전체 모임</p>
-                    <p className={styles.statValue}>{stats.totalCommunities}</p>
+                    <p className={styles.statValue}>{activity.totalClubs}</p>
                   </div>
                 </div>
 
@@ -946,7 +1142,7 @@ export function AdminPage({
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>신고 접수 내역</p>
-                    <p className={styles.statValue}>{stats.totalReports}</p>
+                    <p className={styles.statValue}>{activity.totalReports}</p>
                   </div>
                 </div>
               </div>
@@ -956,32 +1152,51 @@ export function AdminPage({
                 <h2 className={styles.sectionTitle}>최근 활동</h2>
                 <div className={styles.activityList}>
                   <div className={styles.activityItem}>
-                    <div className={styles.activityIcon} style={{ backgroundColor: '#E8F5E9' }}>
-                      <CheckCircle className="w-5 h-5" style={{ color: '#00A651' }} />
-                    </div>
-                    <div className={styles.activityContent}>
-                      <p className={styles.activityText}>새로운 모임 "독서 토론방"이 생성되었습니다</p>
-                      <p className={styles.activityTime}>10분 전</p>
-                    </div>
-                  </div>
-
-                  <div className={styles.activityItem}>
                     <div className={styles.activityIcon} style={{ backgroundColor: '#E3F2FD' }}>
-                      <Users className="w-5 h-5" style={{ color: '#2196F3' }} />
+                      <CheckCircle className="w-5 h-5" style={{ color: '#2196F3' }} />
                     </div>
                     <div className={styles.activityContent}>
-                      <p className={styles.activityText}>새로운 사용자 5명이 가입했습니다</p>
-                      <p className={styles.activityTime}>1시간 전</p>
+                      <p className={styles.activityText}>
+                        {activity.lastestClub === null
+                          ? '새로 가입된 모임이 없습니다.'
+                          : `새로운 모임 ${activity.lastestClubTitle}가 추가됬습니다.`}
+                      </p>
+                      <p className={styles.activityTime}>
+                        {activity.lastestClubTime}
+                      </p>
                     </div>
                   </div>
 
                   <div className={styles.activityItem}>
-                    <div className={styles.activityIcon} style={{ backgroundColor: '#FFF3E0' }}>
-                      <FileText className="w-5 h-5" style={{ color: '#FF9800' }} />
+                    <div className={styles.activityIcon} style={{ backgroundColor: '#E8F5E9' }}>
+                      <Users className="w-5 h-5" style={{ color: '#00A651' }} />
                     </div>
                     <div className={styles.activityContent}>
-                      <p className={styles.activityText}>공지사항이 업데이트되었습니다</p>
-                      <p className={styles.activityTime}>3시간 전</p>
+                      <p className={styles.activityText}>
+                        {activity.totalNew === 0
+                          ? '새로 가입한 사용자가 없습니다.'
+                          : `새로운 사용자 ${activity.totalNew}가 가입했습니다.`}
+                      </p>
+                      <p className={styles.activityTime}>
+                        {activity.lastestUser}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityIcon} style={{ backgroundColor: '#F3E5F5' }}>
+                      <Shield className="w-5 h-5" style={{ color: '#9C27B0' }} />
+                      {/* <FileText className="w-5 h-5" style={{ color: '#FF9800' }} /> */}
+                    </div>
+                    <div className={styles.activityContent}>
+                      <p className={styles.activityText}>
+                        {activity.totalNewReports === 0
+                          ? '새로 접수된 신고가 없습니다.'
+                          : `새로운 신고가 ${activity.totalNewReports}건 접수되었습니다`}
+                      </p>
+                      <p className={styles.activityTime}>
+                        {activity.lastestUserBan}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1023,7 +1238,7 @@ export function AdminPage({
                       {filteredUsers.length > 0 ? (
                         filteredUsers.map((user) => (
                           <tr 
-                            key={user.no}
+                            key={user.userNo}
                             onClick={() => {
                               setSelectedUser(user);
                               setShowUserDetailModal(true);
@@ -1031,30 +1246,32 @@ export function AdminPage({
                             style={{ cursor: 'pointer' }}
                           >
                             <td>{user.username}</td>
-                            <td>{user.email}</td>
+                            <td>{user.userId}</td>
                             <td>{new Date(user.createdAt).toLocaleDateString('ko-KR')}</td>
                             <td>
                               <span className={
-                                user.isAdmin 
+                                user.admin 
                                   ? styles.badgeAdmin 
                                   : user.isSubscribed 
                                   ? styles.badgeSubscribed 
                                   : styles.badgeUser
                               }>
-                                {user.isAdmin ? '관리자' : user.isSubscribed ? '구독 중' : '미구독'}
+                                {user.admin ? '관리자' : user.isSubscribed ? '구독 중' : '미구독'}
                               </span>
                             </td>
                             <td>
-                              <button
-                                className={styles.deleteButton}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setUserToDelete(user.no);
-                                  setShowDeleteModal(true);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {!user.admin && (
+                                <button
+                                  className={styles.deleteButton}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setUserToDelete(user.userNo);
+                                    setShowDeleteModal(true);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))
@@ -1115,9 +1332,9 @@ export function AdminPage({
                             style={{ cursor: 'pointer' }}
                           >
                             <td>{community.title}</td>
-                            <td>{community.category}</td>
-                            <td>{community.leaderName}</td>
-                            <td>{community.memberCount}</td>
+                            <td>{community.category.name}</td>
+                            <td>{community.host.username}</td>
+                            <td>{community.currentMembers}</td>
                             <td>{new Date(community.createdAt).toLocaleDateString('ko-KR')}</td>
                             <td>
                               <button
@@ -1174,89 +1391,51 @@ export function AdminPage({
                         <th>이메일</th>
                         <th>신고 사유</th>
                         <th>신고 날짜</th>
+                        <th>만료 날짜</th>
                         <th style={{ textAlign: 'center' }}>신고 당한 횟수</th>
-                        <th style={{ textAlign: 'center' }}>작업</th>
+                        <th style={{ textAlign: 'center' }}>삭제</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredReports.length > 0 ? (
                         filteredReports.map((report) => (
                           <tr key={report.no}>
-                            <td>{report.reportedUserName || '알 수 없음'}</td>
-                            <td>{report.reportedUserEmail || '알 수 없음'}</td>
+                            <td>{report.user.username || '알 수 없음'}</td>
+                            <td>{report.user.userId || '알 수 없음'}</td>
                             <td>{report.reason}</td>
                             <td>{new Date(report.createdAt).toLocaleDateString('ko-KR')}</td>
+                            <td>{new Date(report.banEndDate).toLocaleDateString('ko-KR')}</td>
                             <td style={{ textAlign: 'center' }}>
-                              <span className={styles.reportCountBadge}>
-                                {getReportCount(report.reportedUserId)}회
+                              <span 
+                                className={
+                                  report.reportCountAtBan >= 5
+                                  ? styles.reportCountDanger
+                                  : styles.reportCountBadge}
+                                >
+                                {(report.reportCountAtBan)}회
                               </span>
                             </td>
                             <td>
-                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', position: 'relative' }}>
-                                <button
-                                  className={styles.actionButton}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenReportDropdown(openReportDropdown === report.no ? null : report.no);
-                                  }}
-                                  title="작업"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {openReportDropdown === report.no && (
-                                  <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      className={styles.dropdownItem}
-                                      onClick={() => {
-                                        if (report.reportedUserId && report.reportedUserName) {
-                                          setUserToBlock({ userId: report.reportedUserId, userName: report.reportedUserName });
-                                          setShowBlockModal(true);
-                                          setOpenReportDropdown(null);
-                                        }
-                                      }}
-                                    >
-                                      <Ban className="w-4 h-4" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
-                                      사용자 차단
-                                    </button>
-                                    <button
-                                      className={styles.dropdownItem}
-                                      onClick={() => {
-                                        // 보류 - 목록에서만 제거
-                                        setReports(reports.filter(r => r.no !== report.no));
-                                        setToastMessage('신고가 보류되었습니다');
-                                        setShowToast(true);
-                                        setTimeout(() => setShowToast(false), 2000);
-                                        setOpenReportDropdown(null);
-                                      }}
-                                    >
-                                      <Clock className="w-4 h-4" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
-                                      보류
-                                    </button>
-                                    <button
-                                      className={styles.dropdownItem}
-                                      onClick={() => {
-                                        setReportToDelete(report.no);
-                                        setShowReportDeleteModal(true);
-                                        setOpenReportDropdown(null);
-                                      }}
-                                      style={{ color: '#ef4444' }}
-                                    >
-                                      <Trash2 className="w-4 h-4" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
-                                      사용자 삭제
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                              <button
+                                className={styles.deleteButton}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setReportToDelete(report.no);
+                                  setShowReportDeleteModal(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className={styles.emptyCell}>
-                            {searchTerm ? '검색 결과가 없습니다' : '신고 데이터를 불러오는 중입니다'}
-                          </td>
-                        </tr>
-                      )}
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className={styles.emptyCell}>
+                              {searchTerm ? '검색 결과가 없습니다' : '신고 데이터를 불러오는 중입니다'}
+                            </td>
+                          </tr>
+                        )}
                     </tbody>
                   </table>
                 </div>
@@ -1280,8 +1459,8 @@ export function AdminPage({
                       imageUrl: '',
                       linkUrl: '',
                       isActive: true,
-                      order: banners.length + 1,
-                      position: 'Main',
+                      seq: banners.length + 1,
+                      position: 'MAIN',
                       startDate: '',
                       endDate: '',
                       clickCount: 0,
@@ -1312,7 +1491,7 @@ export function AdminPage({
                   </thead>
                   <tbody>
                     {banners.length > 0 ? (
-                      banners.sort((a, b) => a.order - b.order).map((banner) => (
+                      banners.sort((a, b) => a.seq - b.seq).map((banner) => (
                         <tr 
                           key={banner.no} 
                           style={{ opacity: banner.isActive ? 1 : 0.4, cursor: 'pointer' }}
@@ -1321,7 +1500,7 @@ export function AdminPage({
                             setShowBannerDetailModal(true);
                           }}
                         >
-                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>{banner.order}</td>
+                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>{banner.seq}</td>
                           <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
                             <img
                               src={banner.imageUrl}
@@ -1348,32 +1527,26 @@ export function AdminPage({
                           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                             <span
                               onClick={(e) => {
-                                e.stopPropagation();
-                                setBanners(banners.map(b =>
-                                  b.no === banner.no ? { ...b, position: b.position === 'PopUp' ? 'Main' : 'PopUp' } : b
-                                ));
+                                handleToggleBannerPosition(e, banner)
                               }}
                               style={{
                                 padding: '4px 10px',
                                 borderRadius: '12px',
                                 fontSize: '0.75rem',
                                 fontWeight: '600',
-                                backgroundColor: banner.position === 'PopUp' ? '#e0e7ff' : '#ffedd5',
-                                color: banner.position === 'PopUp' ? '#4f46e5' : '#ea580c',
+                                backgroundColor: banner.position === 'POPUP' ? '#e0e7ff' : '#ffedd5',
+                                color: banner.position === 'POPUP' ? '#4f46e5' : '#ea580c',
                                 cursor: 'pointer',
                               }}
                             >
-                              {banner.position === 'PopUp' ? 'Popup' : 'Main'}
+                              {banner.position}
                             </span>
                           </td>
                           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                               <span
                                 onClick={(e) => {
-                                  e.stopPropagation();
-                                  setBanners(banners.map(b =>
-                                    b.no === banner.no ? { ...b, isActive: !b.isActive } : b
-                                  ));
+                                  handleToggleBannerIsActivity(e, banner);
                                 }}
                                 style={{
                                   padding: '4px 10px',
@@ -1387,7 +1560,7 @@ export function AdminPage({
                               >
                                 {banner.isActive ? '활성화' : '비활성화'}
                               </span>
-            </div>
+                          </div>
                           </td>
                           <td style={{ verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -1401,7 +1574,7 @@ export function AdminPage({
                                     imageUrl: banner.imageUrl,
                                     linkUrl: banner.linkUrl,
                                     isActive: banner.isActive,
-                                    order: banner.order,
+                                    seq: banner.seq,
                                     position: banner.position,
                                     startDate: banner.startDate,
                                     endDate: banner.endDate,
@@ -1594,7 +1767,7 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>이메일</div>
-                <div className={styles.detailValue}>{selectedUser.email}</div>
+                <div className={styles.detailValue}>{selectedUser.userId}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>가입일</div>
@@ -1612,13 +1785,13 @@ export function AdminPage({
                 <div className={styles.detailLabel}>구독 상태</div>
                 <div className={styles.detailValue}>
                   <span className={
-                    selectedUser.isAdmin 
+                    selectedUser.admin 
                       ? styles.badgeAdmin 
                       : selectedUser.isSubscribed 
                       ? styles.badgeSubscribed 
                       : styles.badgeUser
                   }>
-                    {selectedUser.isAdmin ? '관리자' : selectedUser.isSubscribed ? '구독 중' : '미구독'}
+                    {selectedUser.admin ? '관리자' : selectedUser.isSubscribed ? '구독 중' : '미구독'}
                   </span>
                 </div>
               </div>
@@ -1626,13 +1799,13 @@ export function AdminPage({
                 <div className={styles.detailLabel}>신고 횟수</div>
                 <div className={styles.detailValue}>
                   <span className={styles.reportCountBadge}>
-                    {getReportCount(selectedUser.no)}회
+                    {(user.reportCountAtBan)}회
                   </span>
                 </div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>사용자 ID</div>
-                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedUser.no}</div>
+                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedUser.userNo}</div>
               </div>
             </div>
             <div className={styles.modalFooter}>
@@ -1704,15 +1877,15 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>카테고리</div>
-                <div className={styles.detailValue}>{selectedCommunity.category}</div>
+                <div className={styles.detailValue}>{selectedCommunity.category.name}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>리더</div>
-                <div className={styles.detailValue}>{selectedCommunity.leaderName}</div>
+                <div className={styles.detailValue}>{selectedCommunity.host.username}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>멤버 수</div>
-                <div className={styles.detailValue}>{selectedCommunity.memberCount}명</div>
+                <div className={styles.detailValue}>{selectedCommunity.currentMembers}명</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>생성일</div>
@@ -1823,9 +1996,9 @@ export function AdminPage({
                 </button>
               </div>
               <div className={styles.modalBody}>
-                {report?.reportedUserName ? (
+                {report?.user.username ? (
                   <p className={styles.modalText}>
-                    신고된 사용자 <strong>{report.reportedUserName}</strong>를 삭제하시겠습니까?<br />
+                    신고된 사용자 <strong>{report.user.username}</strong>를 삭제하시겠습니까?<br />
                     해당 신고 기록도 함께 삭제됩니다.
                   </p>
                 ) : (
@@ -1844,15 +2017,8 @@ export function AdminPage({
                 <button
                   className={styles.modalButtonPrimary}
                   onClick={() => {
-                    // 신고된 사용자가 있으면 삭제
-                    if (report?.reportedUserId) {
-                      setUsers(users.filter(u => u.no !== report.reportedUserId));
-                    }
-                    // 신고 기록 삭제
-                    setReports(reports.filter(r => r.no !== reportToDelete));
+                    handleDeleteReport(reportToDelete);
                     setShowReportDeleteModal(false);
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 2000);
                   }}
                 >
                   삭제
@@ -1863,132 +2029,6 @@ export function AdminPage({
         );
       })()}
 
-      {/* 차단 모달 */}
-      {showBlockModal && userToBlock && (
-        <div className={styles.modalOverlay} onClick={() => setShowBlockModal(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>사용자 차단</h2>
-              <button
-                className={styles.modalCloseButton}
-                onClick={() => setShowBlockModal(false)}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <p className={styles.modalText}>
-                사용자 <strong>{userToBlock.userName}</strong>을(를) 차단하시겠습니까?
-              </p>
-              <div className={styles.blockTypeSelector}>
-                <label>
-                  <input
-                    type="radio"
-                    name="blockType"
-                    value="temporary"
-                    checked={blockType === 'temporary'}
-                    onChange={() => setBlockType('temporary')}
-                  />
-                  일시적 차단
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="blockType"
-                    value="permanent"
-                    checked={blockType === 'permanent'}
-                    onChange={() => setBlockType('permanent')}
-                  />
-                  영구적 차단
-                </label>
-              </div>
-              {blockType === 'temporary' && (
-                <div className={styles.blockEndDate}>
-                  <label>차단 기간 (1일 ~ 90일):</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input
-                      type="number"
-                      value={blockDays}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (value >= 1 && value <= 90) {
-                          setBlockDays(value);
-                        }
-                      }}
-                      min="1"
-                      max="90"
-                      style={{ flex: '0 0 80px' }}
-                    />
-                    <span style={{ color: '#92400e', fontWeight: 600 }}>일</span>
-                  </div>
-                  <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #d97706' }}>
-                    <span style={{ fontSize: '0.875rem', color: '#92400e' }}>차단 종료일: </span>
-                    <span style={{ fontSize: '0.875rem', color: '#92400e', fontWeight: 600 }}>
-                      {new Date(Date.now() + blockDays * 24 * 60 * 60 * 1000).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.modalButtonSecondary}
-                onClick={() => setShowBlockModal(false)}
-              >
-                취소
-              </button>
-              <button
-                className={styles.modalButtonPrimary}
-                onClick={async () => {
-                  // 차단 로직 구현
-                  if (blockType && accessToken) {
-                    try {
-                      const response = await fetch(
-                        `/api/admin/reports?userNo=${userToBlock.userId}`,
-                        {
-                          method: 'DELETE',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${accessToken}`,
-                          },
-                          body: JSON.stringify({
-                            blockType,
-                            blockDays: blockType === 'temporary' ? blockDays : undefined,
-                          }),
-                        }
-                      );
-
-                      if (response.ok) {
-                        const data = await response.json();
-                        console.log('사용자 차단 성공:', data);
-                        setShowBlockModal(false);
-                        setBlockType(null);
-                        setBlockDays(7); // 초기화
-                        setToastMessage('차단 완료 하였습니다');
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 2000);
-                      } else {
-                        const errorData = await response.json();
-                        console.error('차단 실패:', errorData);
-                        alert(errorData.error || '차단에 실패했습니다.');
-                      }
-                    } catch (error) {
-                      console.error('차단 요청 오류:', error);
-                      alert('차단 요청 중 오류가 발생했습니다.');
-                    }
-                  }
-                }}
-              >
-                차단
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 배너 추가/수정 모달 */}
       {showBannerModal && (
@@ -2165,8 +2205,8 @@ export function AdminPage({
                 <input
                   type="number"
                   min="1"
-                  value={bannerFormData.order}
-                  onChange={(e) => setBannerFormData({ ...bannerFormData, order: parseInt(e.target.value) || 1 })}
+                  value={bannerFormData.seq}
+                  onChange={(e) => setBannerFormData({ ...bannerFormData, seq: parseInt(e.target.value) || 1 })}
                   style={{
                     width: '100px',
                     padding: '10px',
@@ -2281,7 +2321,7 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>정렬 순서</div>
-                <div className={styles.detailValue}>{selectedBanner.order}</div>
+                <div className={styles.detailValue}>{selectedBanner.seq}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>클릭 수</div>
