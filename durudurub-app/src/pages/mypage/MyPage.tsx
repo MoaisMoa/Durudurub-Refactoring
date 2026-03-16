@@ -1,5 +1,5 @@
-import { ArrowLeft, User, Mail, Calendar, MapPin, Edit2, Heart, Users, AlertTriangle, Crown, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, User, Mail, Calendar, MapPin, Edit2, Heart, Users, AlertTriangle, Crown, Sparkles, Compass } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/header/Navbar';
 
 interface MyPageProps {
@@ -40,7 +40,12 @@ export function MyPage({
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(initialProfileImage || null);
-  
+  const [userInfo, setUserInfo] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+  const [totalMyClub, setTotalMyClub] = useState<number>(0);
+  const [totalFavorite, setTotalFavorite] = useState<number>(0);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   // 성별 영어 -> 한글 변환 함수
   const convertGenderToKorean = (gender: string) => {
     const genderMap: { [key: string]: string } = {
@@ -68,18 +73,79 @@ export function MyPage({
   };
 
   const [editedUser, setEditedUser] = useState({
-    nickname: user?.nickname || '사용자',
-    location: user?.location || '',
+    username: user?.username || '사용자',
+    address: user?.address || '',
     age: user?.age || '',
     gender: convertGenderToKorean(user?.gender || ''),
+    profileImage:  user?.profileImage || ''
   });
 
-  const handleSave = () => {
-    // TODO: 서버에 프로필 업데이트 요청
-    console.log('프로필 업데이트:', editedUser);
-    console.log('프로필 이미지:', profileImage);
-    onProfileImageUpdate?.(profileImage);
-    setIsEditing(false);
+  useEffect(() => {
+    loadUserInfo();
+  }, []);
+
+  const loadUserInfo = async () => {
+    setLoading(true);
+    try {
+      console.log("loadUserInfo =====> ", user);
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`/api/users/mypage/userinfo`, { headers });
+      console.log("res ??? ", res);
+      const userData = await res.json();
+      console.log("userData ????? ", userData?.userInfo);
+      setUserInfo(userData?.userInfo || {});
+      setTotalMyClub(userData?.totalMyClub || 0);
+      setTotalFavorite(userData?.totalFavorite || 0);
+    } catch (error) {
+      console.error('사용자 조회 실패 : ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    setEditedUser({...editedUser, ...userInfo});
+    if (userInfo.profileImgUrl) {
+      setProfileImage(userInfo.profileImgUrl);
+    }
+  }, [userInfo]);
+
+  const handleSave = async () => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const formData = new FormData();
+      formData.append("username", editedUser.username);
+      formData.append("address", editedUser.address);
+      formData.append("age", editedUser.age);
+      formData.append("gender", editedUser.gender);
+      if (imageFile) {
+        formData.append("profileImage", imageFile); // ⭐ 파일 넣기
+      }
+
+      const res = await fetch(`/api/users/mypage/userUpdate`, {
+        method: 'POST',
+        headers: {
+          Authorization : `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("프로필 수정 실패");
+      const data = await res.json();
+      console.log("수정 완료", data);
+      
+      if (data.profileImgUrl) {
+        setProfileImage(data.profileImgUrl);
+        onProfileImageUpdate?.(data.profileImgUrl);
+      }
+      setIsEditing(false);
+
+    } catch (error) {
+      console.log(error);
+    }
+
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,8 +165,11 @@ export function MyPage({
 
       // 파일을 읽어서 미리보기
       const reader = new FileReader();
+      setImageFile(file); // ⭐ 실제 파일 저장
+
       reader.onloadend = () => {
         setProfileImage(reader.result as string);
+        console.log("editedUser ::: ", editedUser);
       };
       reader.readAsDataURL(file);
     }
@@ -270,7 +339,7 @@ export function MyPage({
                     ></div>
                   ) : (
                     <div className={`w-20 h-20 bg-gradient-to-br rounded-full flex items-center justify-center text-white text-2xl font-bold ${profileGradientClass}`}>
-                      {editedUser.nickname.charAt(0)}
+                      {editedUser.username.charAt(0)}
                     </div>
                   )}
                   {isEditing && (
@@ -295,13 +364,13 @@ export function MyPage({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={editedUser.nickname}
-                      onChange={(e) => setEditedUser({ ...editedUser, nickname: e.target.value })}
+                      value={editedUser.username}
+                      onChange={(e) => setEditedUser({ ...editedUser, username: e.target.value })}
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${accentFocusRingClass}`}
                     />
                   ) : (
                     <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
-                      {editedUser.nickname}
+                      {editedUser.username}
                     </div>
                   )}
                 </div>
@@ -326,14 +395,14 @@ export function MyPage({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={editedUser.location}
-                      onChange={(e) => setEditedUser({ ...editedUser, location: e.target.value })}
+                      value={editedUser.address}
+                      onChange={(e) => setEditedUser({ ...editedUser, address: e.target.value })}
                       placeholder="예: 서울특별시"
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${accentFocusRingClass}`}
                     />
                   ) : (
                     <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
-                      {editedUser.location || <span className="text-gray-400">미입력</span>}
+                      {editedUser.address || <span className="text-gray-400">미입력</span>}
                     </div>
                   )}
                 </div>
@@ -414,7 +483,7 @@ export function MyPage({
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">참여 중인 모임</p>
-                      <p className={`text-2xl font-bold mt-1 ${accentStatClass}`}>3개</p>
+                      <p className="text-2xl font-bold text-[#00A651] mt-1">{totalMyClub} 개</p>
                     </div>
                     <Users className={`w-8 h-8 opacity-20 ${accentStatClass}`} />
                   </div>
@@ -423,7 +492,7 @@ export function MyPage({
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">즐겨찾기</p>
-                      <p className={`text-2xl font-bold mt-1 ${accentStatClass}`}>5개</p>
+                      <p className="text-2xl font-bold text-[#00A651] mt-1">{totalFavorite} 개</p>
                     </div>
                     <Heart className={`w-8 h-8 opacity-20 ${accentStatClass}`} />
                   </div>

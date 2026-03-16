@@ -36,7 +36,7 @@ const Layout = ({ children }: LayoutProps) => {
         onExploreClick={handleExploreClick}
 
         onMyPageClick={() => navigate("/mypage")}
-        onMyMeetingsClick={() => navigate("/meetings")}
+        onMyMeetingsClick={() => navigate('/meetings')}
         onNoticeClick={() => navigate("/notice")}
         onAdminClick={() => navigate("/admin")}
         user={user}

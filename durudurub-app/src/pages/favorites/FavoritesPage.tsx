@@ -16,18 +16,21 @@ interface FavoritesPageProps {
   onMiniGameClick?: () => void;
   onMyMeetingsClick?: () => void;
   onLogout?: () => void;
-  onCommunityClick?: (communityId: string) => void;
+  onCommunityClick?: (communityNo: number) => void;
   onExploreClick?: () => void;
 }
 
 interface Community {
-  id: string;
-  name: string;
+  no: number;
+  title: string;
   description: string;
   category: string;
-  memberCount: number;
+  location: string;
+  hostId: string;
+  hostName: string;
+  currentMembers: number;
   maxMembers: number;
-  imageUrl?: string;
+  thumbnailImg?: string;
   createdAt: string;
 }
 
@@ -52,37 +55,20 @@ export function FavoritesPage({
 
   useEffect(() => {
     loadFavorites();
-  }, [user, accessToken]);
+  }, []);
 
   const loadFavorites = async () => {
-    if (!accessToken || !user) {
-      setLoading(false);
-      return;
-    }
-
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      
-      const response = await fetch('/api/likes/favorites', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const formattedFavorites = (data || []).map((club: any) => ({
-          id: String(club.no),
-          name: club.title || '',
-          description: (club.description || '').replace(/<[^>]*>/g, ''),
-          category: club.category?.name || '',
-          memberCount: club.currentMembers || 0,
-          maxMembers: club.maxMembers || 0,
-          imageUrl: club.thumbnailImg || '',
-          createdAt: club.createdAt || '',
-        }));
-        setFavorites(formattedFavorites);
-      }
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string,string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`/api/users/mypage/favorites`, { headers });
+      console.log("res ??? ", res);
+      const favoritesDate = await res.json();
+      console.log("userData ??? ", favoritesDate)
+      setFavorites(favoritesDate || []);
     } catch (error) {
       console.error('즐겨찾기 목록을 불러오는 중 오류:', error);
     } finally {
@@ -90,11 +76,11 @@ export function FavoritesPage({
     }
   };
 
-  const handleRemoveFavorite = async (communityId: string) => {
+  const handleRemoveFavorite = async (communityNo: number) => {
     if (!accessToken) return;
 
     try {
-      const response = await fetch(`/api/likes/club/${communityId}`, {
+      const response = await fetch(`/api/likes/club/${communityNo}`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -105,7 +91,7 @@ export function FavoritesPage({
         const data = await response.json();
         // liked가 false이면 즐겨찾기 해제된 것 → 목록에서 제거
         if (!data.liked) {
-          setFavorites((prev) => prev.filter((c) => c.id !== communityId));
+          setFavorites((prev) => prev.filter((c) => c.no !== communityNo));
         }
       }
     } catch (error) {
@@ -177,27 +163,27 @@ export function FavoritesPage({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {favorites.map((community) => (
                 <div
-                  key={community.id}
+                  key={community.no}
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow"
                 >
                   {/* 데스크톱 버전 - 세로형 레이아웃 */}
                   <div className="hidden md:block">
                     {/* 커뮤니티 이미지 */}
                     <div className="relative h-48 bg-gradient-to-br from-[#00A651] to-[#008f46]">
-                      {community.imageUrl ? (
+                      {community.thumbnailImg ? (
                         <img
-                          src={community.imageUrl}
-                          alt={community.name}
+                          src={community.thumbnailImg}
+                          alt={community.title}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
-                          {community.name.charAt(0)}
+                          {community.title.charAt(0)}
                         </div>
                       )}
                       {/* 즐겨찾기 버튼 */}
                       <button
-                        onClick={() => handleRemoveFavorite(community.id)}
+                        onClick={() => handleRemoveFavorite(community.no)}
                         className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors shadow-lg"
                       >
                         <Heart className="w-5 h-5 text-red-500 fill-red-500" />
@@ -211,7 +197,7 @@ export function FavoritesPage({
                           {community.category}
                         </span>
                         <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          {community.name}
+                          {community.title}
                         </h3>
                         <p className="text-gray-600 text-sm line-clamp-2">
                           {community.description}
@@ -222,13 +208,13 @@ export function FavoritesPage({
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
                           <span>
-                            {community.memberCount}/{community.maxMembers}명
+                            {community.currentMembers}/{community.maxMembers}명
                           </span>
                         </div>
                       </div>
 
                       <button
-                        onClick={() => onCommunityClick?.(community.id)}
+                        onClick={() => onCommunityClick?.(community.no)}
                         className="w-full py-3 bg-[#00A651] text-white rounded-lg hover:bg-[#008f46] transition-colors font-medium"
                       >
                         모임 보기
@@ -240,21 +226,21 @@ export function FavoritesPage({
                   <div className="md:hidden flex gap-3 p-3">
                     {/* 왼쪽: 썸네일 */}
                     <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[#00A651] to-[#008f46]">
-                      {community.imageUrl ? (
+                      {community.thumbnailImg ? (
                         <img
-                          src={community.imageUrl}
-                          alt={community.name}
+                          src={community.thumbnailImg}
+                          alt={community.title}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                          {community.name.charAt(0)}
+                          {community.title.charAt(0)}
                         </div>
                       )}
                       
                       {/* 즐겨찾기 버튼 */}
                       <button
-                        onClick={() => handleRemoveFavorite(community.id)}
+                        onClick={() => handleRemoveFavorite(community.no)}
                         className="absolute top-1 right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md"
                       >
                         <Heart className="w-4 h-4 text-red-500 fill-red-500" />
@@ -269,7 +255,7 @@ export function FavoritesPage({
                           {community.category}
                         </span>
                         <h3 className="font-bold text-gray-900 text-sm line-clamp-1 mb-1">
-                          {community.name}
+                          {community.title}
                         </h3>
                         <p className="text-xs text-gray-600 line-clamp-2 mb-2">
                           {community.description}
@@ -280,10 +266,10 @@ export function FavoritesPage({
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center text-xs text-gray-500">
                           <Users className="w-3 h-3 mr-1" />
-                          {community.memberCount}/{community.maxMembers}
+                          {community.currentMembers}/{community.maxMembers}
                         </div>
                         <button
-                          onClick={() => onCommunityClick?.(community.id)}
+                          onClick={() => onCommunityClick?.(community.no)}
                           className="px-3 py-1.5 bg-[#00A651] text-white rounded-lg text-xs font-medium hover:bg-[#008f46] transition-colors flex-shrink-0"
                         >
                           보기

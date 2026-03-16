@@ -7,7 +7,9 @@ import { LoginPage } from './pages/login/LoginPage';
 import { SignupPage } from './pages/signup/SignupPage';
 import { CreateCommunityPageWrapper } from './pages/communityCreate/CreateCommunityPageWrapper';
 import { AppProvider, useApp } from './contexts/AppContext';
-import { MiniGamePageWrapper } from './pages/other/OtherPagesWrapper';
+import { MyPageWrapper } from "./pages/mypage/MyPageWrapper";
+import { MyMeetingsWrapper } from "./pages/mypage/MyMeetingsWrapper";
+import { MiniGamePageWrapper, AdminPageWrapper, FavoritesPageWrapper } from './pages/other/OtherPagesWrapper';
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -34,11 +36,32 @@ function AppRoutes() {
       <Route path="/explore" element={<ExploreWrapper />} />
       <Route path="/community/create" element={<CreateCommunityPageWrapper />} />
       <Route path="/club/:id" element={<ClubDetailWrapper />} />
+      <Route path="/community/:id" element={<ClubDetailWrapper />} />
       <Route path="/minigame" element={<MiniGamePageWrapper />} />
 
       <Route
         path="/signup"
         element={<SignupPage onClose={() => navigate('/')} onLoginClick={() => navigate('/login')} />}
+      />
+
+      <Route 
+        path="/mypage"
+        element={ <MyPageWrapper />}
+      />
+
+      <Route 
+        path="/meetings"
+        element={ <MyMeetingsWrapper />}
+      />
+
+      <Route 
+        path="/favorites"
+        element={ <FavoritesPageWrapper />}
+      />
+
+            <Route 
+        path="/admin"
+        element={ <AdminPageWrapper />}
       />
     </Routes>
   );

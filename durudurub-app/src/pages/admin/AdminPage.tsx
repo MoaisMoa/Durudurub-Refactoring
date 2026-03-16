@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 import styles from '@/pages/admin/AdminPage.module.css';
 import { Navbar } from '@/components/header/Navbar';
+import { data } from 'react-router-dom';
+// import { projectId, publicAnonKey } from 'utils/supabase/info';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 interface AdminPageProps {
@@ -44,112 +46,68 @@ interface AdminPageProps {
   onMiniGameClick: () => void;
   onMyMeetingsClick: () => void;
   onLogout: () => void;
-  onNavigateToCommunity?: (communityId: string) => void;
+  onNavigateToCommunity?: (communityId: number) => void;
 }
 
 interface UserData {
-  id: string;
+  userNo: number;
   username: string;
-  email: string;
+  userId: string;
   createdAt: string;
-  isAdmin: boolean;
+  admin: boolean;
   isSubscribed?: boolean;
-  reportCount?: number; // 신고 횟수
+  reportCountAtBan?: number; // 신고 횟수
 }
 
 interface CommunityData {
-  id: string;
+  no: number;
+  hostNo: number;
   title: string;
-  category: string;
-  leaderName: string;
-  memberCount: number;
+  category: { no: number; name: string };
+  host: { username: string; };
+  currentMembers: number;
   createdAt: string;
   status: 'active' | 'pending' | 'inactive';
 }
 
 interface ReportData {
-  id: string;
-  reporterName: string;
-  reportedContent: string;
-  reportedUserId?: string; // 신고된 사용자 ID
-  reportedUserName?: string; // 신고된 사용자 이름
-  reportedUserEmail?: string; // 신고된 사용자 이메일
+  no: number;
+  user: {
+    no: number;
+    userId: string;
+    username: string;
+  }
+
   reason: string;
+  reportCountAtBan: number;
+  banType: 'PERMANENT' | 'TEMPORARY';
+  banEndDate: string | null;
+
+  isActive: 'Y' | 'N';
+
   createdAt: string;
-  status: 'pending' | 'resolved';
+  updatedAt: string;
 }
 
 interface BannerData {
-  id: string;
+  no: number;
   title: string;
-  imageUrl: string;
-  linkUrl: string;
-  isActive: boolean;
-  createdAt: string;
-  order: number;
-  position: 'Main' | 'Side' | 'PopUp';
-  startDate: string;
-  endDate: string;
-  clickCount: number;
-  description?: string; // 배너 설명 (선택 사항)
-}
 
-// 백엔드 API DTO 타입
-interface ApiAdminUser {
-  userNo: number;
-  userId: string;
-  username: string;
-  createdAt: string;
-  subStatus: string;
-  isAdmin: boolean;
-}
-interface ApiClubRecord {
-  no: number;
-  title: string;
-  currentMembers: number;
-  createdAt: string;
-  status: string;
-  category?: { name: string };
-  host?: { username: string };
-}
-interface ApiUserBanRecord {
-  no: number;
-  userNo: number;
-  reason: string;
-  reportCountAtBan: number;
-  isActive: string;
-  createdAt: string;
-  user?: { username: string; userId: string };
-}
-interface ApiBannerRecord {
-  no: number;
-  title: string;
   imageUrl: string;
   linkUrl: string;
-  position: string;
-  description?: string;
-  isActive: string;
-  startDate: string;
-  endDate: string;
+
+  isActive: boolean;
+  position: 'MAIN' | 'POPUP';
+
   seq: number;
   clickCount: number;
+  description?: string | null;
+
   createdAt: string;
-}
-interface ApiCategoryRecord {
-  no: number;
-  name: string;
-  description: string;
-  icon?: string;
-  seq: number;
-  createdAt: string;
-  subCategoryList?: ApiSubCategoryRecord[];
-}
-interface ApiSubCategoryRecord {
-  no: number;
-  categoryNo: number;
-  name: string;
-  seq: number;
-  createdAt: string;
+  // updateAt: string;
+
+  startDate: string;
+  endDate: string;
 }
 
 const ItemTypes = {
@@ -158,15 +116,15 @@ const ItemTypes = {
 };
 
 interface DraggableSubCategoryProps {
-  sub: { id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string };
+  sub: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string };
   index: number;
-  parentId: string;
-  moveSubCategory: (parentId: string, dragIndex: number, hoverIndex: number) => void;
+  parentId: number;
+  moveSubCategory: (parentId: number, dragIndex: number, hoverIndex: number) => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, onDelete }: DraggableSubCategoryProps) {
+  function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, onDelete }: DraggableSubCategoryProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -193,7 +151,7 @@ function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, o
   });
   const [, drop] = useDrop({
     accept: ItemTypes.SUBCATEGORY,
-    hover(item: { index: number; parentId: string }, monitor) {
+    hover(item: { index: number; parentId: number }, monitor) {
       if (!ref.current) {
         return;
       }
@@ -294,7 +252,7 @@ function DraggableSubCategory({ sub, index, parentId, moveSubCategory, onEdit, o
 }
 
 interface DraggableParentCategoryProps {
-  parent: { id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string };
+  parent: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string };
   index: number;
   moveParentCategory: (dragIndex: number, hoverIndex: number) => void;
   onDelete: () => void;
@@ -467,13 +425,13 @@ function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, 
                 e.currentTarget.style.backgroundColor = '#00A651';
                 e.currentTarget.style.borderColor = '#00A651';
                 const icon = e.currentTarget.querySelector('svg');
-                if (icon) (icon as HTMLElement).style.color = '#ffffff';
+                if (icon) icon.style.color = '#ffffff';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = '#ffffff';
                 e.currentTarget.style.borderColor = '#e5e7eb';
                 const icon = e.currentTarget.querySelector('svg');
-                if (icon) (icon as HTMLElement).style.color = '#6b7280';
+                if (icon) icon.style.color  = '#6b7280';
               }}
             >
               <Edit2 className="w-5 h-5" style={{ color: '#6b7280', transition: 'color 0.2s' }} />
@@ -498,13 +456,13 @@ function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, 
               e.currentTarget.style.backgroundColor = '#ef4444';
               e.currentTarget.style.borderColor = '#ef4444';
               const icon = e.currentTarget.querySelector('svg');
-              if (icon) (icon as HTMLElement).style.color = '#ffffff';
+              if (icon) icon.style.color  = '#ffffff';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '#ffffff';
               e.currentTarget.style.borderColor = '#fecaca';
               const icon = e.currentTarget.querySelector('svg');
-              if (icon) (icon as HTMLElement).style.color = '#ef4444';
+              if (icon) icon.style.color  = '#ef4444';
             }}
           >
             <Trash2 className="w-5 h-5" style={{ color: '#ef4444', transition: 'color 0.2s' }} />
@@ -545,6 +503,9 @@ export function AdminPage({
   
   // 배너 데이터
   const [banners, setBanners] = useState<BannerData[]>([]);
+
+  // 대시 보드
+  const [activity, setActivity] = useState<any>({});
   
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -552,56 +513,72 @@ export function AdminPage({
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showUserDetailModal, setShowUserDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [selectedCommunity, setSelectedCommunity] = useState<CommunityData | null>(null);
   const [showCommunityDetailModal, setShowCommunityDetailModal] = useState(false);
   const [showCommunityDeleteModal, setShowCommunityDeleteModal] = useState(false);
-  const [communityToDelete, setCommunityToDelete] = useState<string | null>(null);
-  const [reportToDelete, setReportToDelete] = useState<string | null>(null);
+  const [communityToDelete, setCommunityToDelete] = useState<number | null>(null);
+  const [reportToDelete, setReportToDelete] = useState<number | null>(null);
   const [showReportDeleteModal, setShowReportDeleteModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [userToBlock, setUserToBlock] = useState<{ userId: string; userName: string } | null>(null);
   const [blockType, setBlockType] = useState<'temporary' | 'permanent' | null>(null);
   const [blockDays, setBlockDays] = useState<number>(7); // 기본값 7일
   const [toastMessage, setToastMessage] = useState<string>('삭제 되었습니다');
-  const [openReportDropdown, setOpenReportDropdown] = useState<string | null>(null);
+  const [openReportDropdown, setOpenReportDropdown] = useState<number | null>(null);
 
   // 배너 관리 상태
   const [selectedBanner, setSelectedBanner] = useState<BannerData | null>(null);
   const [showBannerModal, setShowBannerModal] = useState(false);
   const [showBannerDetailModal, setShowBannerDetailModal] = useState(false);
   const [showBannerDeleteModal, setShowBannerDeleteModal] = useState(false);
-  const [bannerToDelete, setBannerToDelete] = useState<string | null>(null);
+  const [bannerToDelete, setBannerToDelete] = useState<number | null>(null);
   const [bannerFormData, setBannerFormData] = useState({
     title: '',
     imageUrl: '',
     linkUrl: '',
     isActive: true,
-    order: 1,
-    position: 'Main' as 'Main' | 'Side' | 'PopUp',
-    startDate: '',
-    endDate: '',
+    seq: 1,
+    position: 'MAIN' as 'MAIN' | 'POPUP',
+    startDate: null as string | null,
+    endDate: null as string | null,
     clickCount: 0,
-    description: '',
+    description: '' as string | null,
   });
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [showBannerErrorModal, setShowBannerErrorModal] = useState(false);
   const [bannerErrorMessage, setBannerErrorMessage] = useState('');
 
-  // 카테고리 관리 상태
-  const [categories, setCategories] = useState<{ id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string }[]>([]);
-  const [dashboardStats, setDashboardStats] = useState<{ totalUsers: number; totalClubs: number; totalReports: number } | null>(null);
-  const [categoryIconFile, setCategoryIconFile] = useState<File | null>(null);
+  const [categories, setCategories] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string }[]>([]);
+  useEffect(() => {
+    loadCategories();
+  }, [])
+  const loadCategories = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/admin/categories', { headers });
+      const data = await res.json();
+      setCategories(data || [])
+    } catch (error) {
+      console.error('커뮤니티 조회 실패 : ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string; description: string; createdAt: string; communityCount: number; parentId?: string | null; iconUrl?: string } | null>(null);
-  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '', parentId: null as string | null, iconUrl: '' });
+  const [selectedCategory, setSelectedCategory] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string } | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '', parentId: null as number | null, iconUrl: '' });
   const [showCategoryDeleteModal, setShowCategoryDeleteModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
 
   // 소분류 순서 변경 함수
-  const moveSubCategory = (parentId: string, dragIndex: number, hoverIndex: number) => {
-    const subCategories = categories.filter(c => c.parentId === parentId);
+  const moveSubCategory = (parentId: number, dragIndex: number, hoverIndex: number) => {
+    const subCategories = categories.filter(c => c.no === parentId);
     const draggedItem = subCategories[dragIndex];
     
     // 드래그된 항목을 제거하고 새 위치에 삽입
@@ -610,7 +587,7 @@ export function AdminPage({
     updatedSubCategories.splice(hoverIndex, 0, draggedItem);
     
     // 전체 카테고리 목록에서 해당 부모의 소분류들만 순서 변경
-    const otherCategories = categories.filter(c => c.parentId !== parentId);
+    const otherCategories = categories.filter(c => c.no !== parentId);
     setCategories([...otherCategories, ...updatedSubCategories]);
   };
 
@@ -633,13 +610,15 @@ export function AdminPage({
   const isAdmin = user?.isAdmin === true || user?.userId === 'admin';
 
   useEffect(() => {
-    if (!isAdmin) return;
-    if (activeTab === 'dashboard') loadDashboard();
-    else if (activeTab === 'users') loadUsers();
-    else if (activeTab === 'communities') loadCommunities();
-    else if (activeTab === 'reports') loadReports();
-    else if (activeTab === 'banners') loadBanners();
-    else if (activeTab === 'categories') loadCategories();
+    if (isAdmin && activeTab === 'users') {
+      loadUsers();
+    } else if (isAdmin && activeTab === 'communities') {
+      loadCommunities();
+    } else if (isAdmin && activeTab === 'reports') {
+      loadBan();
+    } else if (isAdmin && activeTab === 'banners') {
+      loadBanners();
+    }
   }, [activeTab, isAdmin]);
 
   useEffect(() => {
@@ -655,20 +634,46 @@ export function AdminPage({
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openDropdown, openReportDropdown]);
 
+  useEffect(() => {
+    loadActivity();
+  },[]);
+
+  // 대시보드
+  const loadActivity = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch("/api/admin/dashboard", { headers });
+      console.log("res ??? ", res);
+      const data = await res.json()
+      console.log("userData ??? ", data)
+      setActivity(data)
+    } catch (error) {
+      console.error('관리자 대시보드 불러오는 중 오류: ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/admin/api/users');
-      if (!response.ok) throw new Error('사용자 목록 로드 실패');
-      const data: ApiAdminUser[] = await response.json();
-      setUsers(data.map(u => ({
-        id: String(u.userNo),
-        username: u.username,
-        email: u.userId,
-        createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
-        isAdmin: u.isAdmin,
-        isSubscribed: u.subStatus === 'ACTIVE',
-      })));
+      const token = sessionStorage.getItem('accessToken');
+      const response = await fetch(
+        `/api/admin/users`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data || []);
+      }
     } catch (error) {
       console.error('사용자 목록 로드 실패:', error);
     } finally {
@@ -679,20 +684,49 @@ export function AdminPage({
   const loadCommunities = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/admin/api/clubs');
-      if (!response.ok) throw new Error('모임 목록 로드 실패');
-      const data: ApiClubRecord[] = await response.json();
-      setCommunities(data.map(c => ({
-        id: String(c.no),
-        title: c.title,
-        category: c.category?.name || '미분류',
-        leaderName: c.host?.username || '알 수 없음',
-        memberCount: c.currentMembers,
-        createdAt: c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString(),
-        status: (c.status === 'ACTIVE' ? 'active' : c.status === 'PENDING' ? 'pending' : 'inactive') as 'active' | 'pending' | 'inactive',
-      })));
+      const token = sessionStorage.getItem('accessToken');
+      const response = await fetch(
+        `/api/admin/clubs`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setCommunities(data || []);
+      }
     } catch (error) {
-      console.error('모임 목록 로드 실패:', error);
+      // Mock 데이터 사용 (Supabase 연결 실패 시)
+      console.log('모임 목록: Mock 데이터 사용 중');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadBan = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const response = await fetch(
+        `/api/admin/reports`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setReports(data || []);
+      }
+      console.log("response status", response.status)
+    } catch (error) {
+      // Mock 데이터 사용 (Supabase 연결 실패 시)
+      console.log('모임 목록: Mock 데이터 사용 중');
     } finally {
       setLoading(false);
     }
@@ -701,18 +735,20 @@ export function AdminPage({
   const loadBanners = async () => {
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('accessToken');
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/admin/banners`,
+        `/api/admin/banners`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken || publicAnonKey}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setBanners(data.banners || []);
+        console.log("bannerList >>>>> ", data)
+        setBanners(data);
       }
     } catch (error) {
       // Mock 데이터 사용 (Supabase 연결 실패 시)
@@ -721,6 +757,70 @@ export function AdminPage({
       setLoading(false);
     }
   };
+
+  const handleToggleBannerPosition = async (
+    e: React.MouseEvent,
+    banner: BannerData
+  ) => {
+    e.stopPropagation();
+
+    const newPosition = banner.position === 'MAIN' ? 'POPUP' : 'MAIN';
+
+    try {
+      const token = sessionStorage.getItem('accessToken')
+      const res = await fetch(`/api/admin/banners/${banner.no}/position`, { 
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({position: newPosition})
+      });
+      
+      if (!res.ok) throw new Error("배너 위치 변경 실패");
+
+      setBanners(prev =>
+        prev.map(b =>
+          b.no === banner.no ? { ...b, position: newPosition } : b
+        )
+      );
+      console.log("res >>>> ", res)
+    } catch (error) {
+      console.error("배너 위치 변경 오류", error);
+    }
+  }
+
+  const handleToggleBannerIsActivity = async (
+    e: React.MouseEvent,
+    banner: BannerData
+  ) => {
+    e.stopPropagation();
+
+    const newActivity = !banner.isActive;
+
+    try {
+      const token = sessionStorage.getItem('accessToken')
+      const res = await fetch(`/api/admin/banners/${banner.no}/active`, { 
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({isActive: newActivity ? 'Y' : 'N'})
+      });
+      
+      if (!res.ok) throw new Error("배너 활성화 변경 실패");
+
+      setBanners(prev =>
+        prev.map(b =>
+          b.no === banner.no ? { ...b, isActive: newActivity } : b
+        )
+      );
+      console.log("res >>>> ", res)
+    } catch (error) {
+      console.error("배너 활성화 변경 오류", error);
+    }
+  }
 
   const saveBanner = () => {
     // 프론트엔드 전용 배너 저장
@@ -749,7 +849,7 @@ export function AdminPage({
       imageUrl,
       linkUrl: bannerFormData.linkUrl,
       isActive: bannerFormData.isActive,
-      order: bannerFormData.order,
+      seq: bannerFormData.seq,
       position: bannerFormData.position,
       startDate: bannerFormData.startDate,
       endDate: bannerFormData.endDate,
@@ -759,12 +859,12 @@ export function AdminPage({
 
     if (selectedBanner) {
       // 수정
-      setBanners(banners.map(b => b.id === selectedBanner.id ? { ...b, ...bannerData } : b));
+      setBanners(banners.map(b => b.no === selectedBanner.no ? { ...b, ...bannerData } : b));
       setToastMessage('배너가 수정되었습니다');
     } else {
       // 추가
       const newBanner = {
-        id: `banner-${Date.now()}`,
+        no: 0,
         createdAt: new Date().toISOString(),
         ...bannerData,
       };
@@ -777,9 +877,9 @@ export function AdminPage({
     setTimeout(() => setShowToast(false), 2000);
   };
 
-  const deleteBanner = (bannerId: string) => {
+  const deleteBanner = (bannerId: number) => {
     // 프론트엔드 전용 배너 삭제
-    setBanners(banners.filter(b => b.id !== bannerId));
+    setBanners(banners.filter(b => b.no !== bannerId));
     setToastMessage('배너가 삭제되었습니다');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
@@ -818,57 +918,119 @@ export function AdminPage({
   }
 
   // 대시보드 통계 (목업 데이터)
-  const stats = {
-    totalUsers: 1247,
-    totalCommunities: 89,
-    totalReports: 23,
-  };
+  // const stats = {
+  //   totalUsers: 1247,
+  //   totalCommunities: 89,
+  //   totalReports: 23,
+  // };
 
   const filteredUsers = users.filter(
     (u) =>
       u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+      u.userId.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
+  console.log(filteredUsers);
   const filteredCommunities = communities.filter(
     (c) =>
       c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.category.toLowerCase().includes(searchTerm.toLowerCase())
+    c.category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  console.log(filteredCommunities);
 
   const filteredReports = reports.filter(
     (r) =>
-      r.reportedUserName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.reason.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  console.log("filteredReports>>>> ", filteredReports);
 
   // 신고 당한 횟수 계산 함수
-  const getReportCount = (userId?: string) => {
-    if (!userId) return 0;
-    return reports.filter(r => r.reportedUserId === userId).length;
-  };
+  // const getReportCount = (userId?: string) => {
+  //   if (!userId) return 0;
+  //   return reports.filter(r => r.user.userId === userId).length;
+  // };
 
   // ��한 변경 함수
-  const handleToggleSubscription = (userId: string) => {
+  const handleToggleSubscription = (userId: number) => {
     setUsers(users.map(u => 
-      u.id === userId ? { ...u, isSubscribed: !u.isSubscribed } : u
+      u.userNo === userId ? { ...u, isSubscribed: !u.isSubscribed } : u
     ));
     setOpenDropdown(null);
     alert('권한이 변경되었습니다.');
   };
 
   // 사용자 삭제 함수
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(u => u.id !== userId));
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
+  const handleDeleteUser = async (userNo: number) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/admin/users/${userNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+      if (!res.ok) {
+        throw new Error("삭제 실패");
+      }
+
+      setUsers(users.filter(u => u.userNo !== userNo));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+    } catch (error) {
+      console.error("유저 삭제 실패", error);
+    }
   };
 
   // 모임 삭제 함수
-  const handleDeleteCommunity = (communityId: string) => {
-    setCommunities(communities.filter(c => c.id !== communityId));
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
+  const handleDeleteCommunity = async (clubNo: number) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/admin/clubs/${clubNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+      if (!res.ok) {
+        throw new Error("삭제 실패");
+      }
+
+      setCommunities(communities.filter(c => c.no !== clubNo));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+    } catch (error) {
+      console.error("유저 삭제 실패", error);
+    }
+  };
+
+  // 신고된 사용자 삭제 함수
+  const handleDeleteReport  = async (userNo: number) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/admin/reports/${userNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+      if (!res.ok) {
+        throw new Error("삭제 실패");
+      }
+
+      // 신고 목록에서 제거
+      setReports(prev => prev.filter(r => r.no !== userNo));
+
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+    } catch (error) {
+      console.error("유저 삭제 실패", error);
+    }
   };
 
   return (
@@ -959,7 +1121,7 @@ export function AdminPage({
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>전체 사용자</p>
-                    <p className={styles.statValue}>{stats.totalUsers.toLocaleString()}</p>
+                    <p className={styles.statValue}>{activity.totalUsers}</p>
                   </div>
                 </div>
 
@@ -969,7 +1131,7 @@ export function AdminPage({
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>전체 모임</p>
-                    <p className={styles.statValue}>{stats.totalCommunities}</p>
+                    <p className={styles.statValue}>{activity.totalClubs}</p>
                   </div>
                 </div>
 
@@ -979,7 +1141,7 @@ export function AdminPage({
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>신고 접수 내역</p>
-                    <p className={styles.statValue}>{stats.totalReports}</p>
+                    <p className={styles.statValue}>{activity.totalReports}</p>
                   </div>
                 </div>
               </div>
@@ -989,32 +1151,51 @@ export function AdminPage({
                 <h2 className={styles.sectionTitle}>최근 활동</h2>
                 <div className={styles.activityList}>
                   <div className={styles.activityItem}>
-                    <div className={styles.activityIcon} style={{ backgroundColor: '#E8F5E9' }}>
-                      <CheckCircle className="w-5 h-5" style={{ color: '#00A651' }} />
-                    </div>
-                    <div className={styles.activityContent}>
-                      <p className={styles.activityText}>새로운 모임 "독서 토론방"이 생성되었습니다</p>
-                      <p className={styles.activityTime}>10분 전</p>
-                    </div>
-                  </div>
-
-                  <div className={styles.activityItem}>
                     <div className={styles.activityIcon} style={{ backgroundColor: '#E3F2FD' }}>
-                      <Users className="w-5 h-5" style={{ color: '#2196F3' }} />
+                      <CheckCircle className="w-5 h-5" style={{ color: '#2196F3' }} />
                     </div>
                     <div className={styles.activityContent}>
-                      <p className={styles.activityText}>새로운 사용자 5명이 가입했습니다</p>
-                      <p className={styles.activityTime}>1시간 전</p>
+                      <p className={styles.activityText}>
+                        {activity.lastestClub === null
+                          ? '새로 가입된 모임이 없습니다.'
+                          : `새로운 모임 ${activity.lastestClubTitle}가 추가됬습니다.`}
+                      </p>
+                      <p className={styles.activityTime}>
+                        {activity.lastestClubTime}
+                      </p>
                     </div>
                   </div>
 
                   <div className={styles.activityItem}>
-                    <div className={styles.activityIcon} style={{ backgroundColor: '#FFF3E0' }}>
-                      <FileText className="w-5 h-5" style={{ color: '#FF9800' }} />
+                    <div className={styles.activityIcon} style={{ backgroundColor: '#E8F5E9' }}>
+                      <Users className="w-5 h-5" style={{ color: '#00A651' }} />
                     </div>
                     <div className={styles.activityContent}>
-                      <p className={styles.activityText}>공지사항이 업데이트되었습니다</p>
-                      <p className={styles.activityTime}>3시간 전</p>
+                      <p className={styles.activityText}>
+                        {activity.totalNew === 0
+                          ? '새로 가입한 사용자가 없습니다.'
+                          : `새로운 사용자 ${activity.totalNew}가 가입했습니다.`}
+                      </p>
+                      <p className={styles.activityTime}>
+                        {activity.lastestUser}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityIcon} style={{ backgroundColor: '#F3E5F5' }}>
+                      <Shield className="w-5 h-5" style={{ color: '#9C27B0' }} />
+                      {/* <FileText className="w-5 h-5" style={{ color: '#FF9800' }} /> */}
+                    </div>
+                    <div className={styles.activityContent}>
+                      <p className={styles.activityText}>
+                        {activity.totalNewReports === 0
+                          ? '새로 접수된 신고가 없습니다.'
+                          : `새로운 신고가 ${activity.totalNewReports}건 접수되었습니다`}
+                      </p>
+                      <p className={styles.activityTime}>
+                        {activity.lastestUserBan}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1056,7 +1237,7 @@ export function AdminPage({
                       {filteredUsers.length > 0 ? (
                         filteredUsers.map((user) => (
                           <tr 
-                            key={user.id}
+                            key={user.userNo}
                             onClick={() => {
                               setSelectedUser(user);
                               setShowUserDetailModal(true);
@@ -1064,30 +1245,32 @@ export function AdminPage({
                             style={{ cursor: 'pointer' }}
                           >
                             <td>{user.username}</td>
-                            <td>{user.email}</td>
+                            <td>{user.userId}</td>
                             <td>{new Date(user.createdAt).toLocaleDateString('ko-KR')}</td>
                             <td>
                               <span className={
-                                user.isAdmin 
+                                user.admin 
                                   ? styles.badgeAdmin 
                                   : user.isSubscribed 
                                   ? styles.badgeSubscribed 
                                   : styles.badgeUser
                               }>
-                                {user.isAdmin ? '관리자' : user.isSubscribed ? '구독 중' : '미구독'}
+                                {user.admin ? '관리자' : user.isSubscribed ? '구독 중' : '미구독'}
                               </span>
                             </td>
                             <td>
-                              <button
-                                className={styles.deleteButton}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setUserToDelete(user.id);
-                                  setShowDeleteModal(true);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {!user.admin && (
+                                <button
+                                  className={styles.deleteButton}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setUserToDelete(user.userNo);
+                                    setShowDeleteModal(true);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))
@@ -1140,7 +1323,7 @@ export function AdminPage({
                       {filteredCommunities.length > 0 ? (
                         filteredCommunities.map((community) => (
                           <tr 
-                            key={community.id}
+                            key={community.no}
                             onClick={() => {
                               setSelectedCommunity(community);
                               setShowCommunityDetailModal(true);
@@ -1148,16 +1331,16 @@ export function AdminPage({
                             style={{ cursor: 'pointer' }}
                           >
                             <td>{community.title}</td>
-                            <td>{community.category}</td>
-                            <td>{community.leaderName}</td>
-                            <td>{community.memberCount}</td>
+                            <td>{community.category.name}</td>
+                            <td>{community.host.username}</td>
+                            <td>{community.currentMembers}</td>
                             <td>{new Date(community.createdAt).toLocaleDateString('ko-KR')}</td>
                             <td>
                               <button
                                 className={styles.deleteButton}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setCommunityToDelete(community.id);
+                                  setCommunityToDelete(community.no);
                                   setShowCommunityDeleteModal(true);
                                 }}
                               >
@@ -1207,89 +1390,51 @@ export function AdminPage({
                         <th>이메일</th>
                         <th>신고 사유</th>
                         <th>신고 날짜</th>
+                        <th>만료 날짜</th>
                         <th style={{ textAlign: 'center' }}>신고 당한 횟수</th>
-                        <th style={{ textAlign: 'center' }}>작업</th>
+                        <th style={{ textAlign: 'center' }}>삭제</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredReports.length > 0 ? (
                         filteredReports.map((report) => (
-                          <tr key={report.id}>
-                            <td>{report.reportedUserName || '알 수 없음'}</td>
-                            <td>{report.reportedUserEmail || '알 수 없음'}</td>
+                          <tr key={report.no}>
+                            <td>{report.user.username || '알 수 없음'}</td>
+                            <td>{report.user.userId || '알 수 없음'}</td>
                             <td>{report.reason}</td>
                             <td>{new Date(report.createdAt).toLocaleDateString('ko-KR')}</td>
+                            <td>{new Date(report.banEndDate).toLocaleDateString('ko-KR')}</td>
                             <td style={{ textAlign: 'center' }}>
-                              <span className={styles.reportCountBadge}>
-                                {getReportCount(report.reportedUserId)}회
+                              <span 
+                                className={
+                                  report.reportCountAtBan >= 5
+                                  ? styles.reportCountDanger
+                                  : styles.reportCountBadge}
+                                >
+                                {(report.reportCountAtBan)}회
                               </span>
                             </td>
                             <td>
-                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', position: 'relative' }}>
-                                <button
-                                  className={styles.actionButton}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenReportDropdown(openReportDropdown === report.id ? null : report.id);
-                                  }}
-                                  title="작업"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {openReportDropdown === report.id && (
-                                  <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      className={styles.dropdownItem}
-                                      onClick={() => {
-                                        if (report.reportedUserId && report.reportedUserName) {
-                                          setUserToBlock({ userId: report.reportedUserId, userName: report.reportedUserName });
-                                          setShowBlockModal(true);
-                                          setOpenReportDropdown(null);
-                                        }
-                                      }}
-                                    >
-                                      <Ban className="w-4 h-4" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
-                                      사용자 차단
-                                    </button>
-                                    <button
-                                      className={styles.dropdownItem}
-                                      onClick={() => {
-                                        // 보류 - 목록에서만 제거
-                                        setReports(reports.filter(r => r.id !== report.id));
-                                        setToastMessage('신고가 보류되었습니다');
-                                        setShowToast(true);
-                                        setTimeout(() => setShowToast(false), 2000);
-                                        setOpenReportDropdown(null);
-                                      }}
-                                    >
-                                      <Clock className="w-4 h-4" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
-                                      보류
-                                    </button>
-                                    <button
-                                      className={styles.dropdownItem}
-                                      onClick={() => {
-                                        setReportToDelete(report.id);
-                                        setShowReportDeleteModal(true);
-                                        setOpenReportDropdown(null);
-                                      }}
-                                      style={{ color: '#ef4444' }}
-                                    >
-                                      <Trash2 className="w-4 h-4" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
-                                      사용자 삭제
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                              <button
+                                className={styles.deleteButton}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setReportToDelete(report.no);
+                                  setShowReportDeleteModal(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className={styles.emptyCell}>
-                            {searchTerm ? '검색 결과가 없습니다' : '신고 데이터를 불러오는 중입니다'}
-                          </td>
-                        </tr>
-                      )}
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className={styles.emptyCell}>
+                              {searchTerm ? '검색 결과가 없습니다' : '신고 데이터를 불러오는 중입니다'}
+                            </td>
+                          </tr>
+                        )}
                     </tbody>
                   </table>
                 </div>
@@ -1313,8 +1458,8 @@ export function AdminPage({
                       imageUrl: '',
                       linkUrl: '',
                       isActive: true,
-                      order: banners.length + 1,
-                      position: 'Main',
+                      seq: banners.length + 1,
+                      position: 'MAIN',
                       startDate: '',
                       endDate: '',
                       clickCount: 0,
@@ -1345,16 +1490,16 @@ export function AdminPage({
                   </thead>
                   <tbody>
                     {banners.length > 0 ? (
-                      banners.sort((a, b) => a.order - b.order).map((banner) => (
+                      banners.sort((a, b) => a.seq - b.seq).map((banner) => (
                         <tr 
-                          key={banner.id} 
+                          key={banner.no} 
                           style={{ opacity: banner.isActive ? 1 : 0.4, cursor: 'pointer' }}
                           onClick={() => {
                             setSelectedBanner(banner);
                             setShowBannerDetailModal(true);
                           }}
                         >
-                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>{banner.order}</td>
+                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>{banner.seq}</td>
                           <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
                             <img
                               src={banner.imageUrl}
@@ -1381,32 +1526,26 @@ export function AdminPage({
                           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                             <span
                               onClick={(e) => {
-                                e.stopPropagation();
-                                setBanners(banners.map(b =>
-                                  b.id === banner.id ? { ...b, position: b.position === 'popup' ? 'main' : 'popup' } : b
-                                ));
+                                handleToggleBannerPosition(e, banner)
                               }}
                               style={{
                                 padding: '4px 10px',
                                 borderRadius: '12px',
                                 fontSize: '0.75rem',
                                 fontWeight: '600',
-                                backgroundColor: banner.position === 'popup' ? '#e0e7ff' : '#ffedd5',
-                                color: banner.position === 'popup' ? '#4f46e5' : '#ea580c',
+                                backgroundColor: banner.position === 'POPUP' ? '#e0e7ff' : '#ffedd5',
+                                color: banner.position === 'POPUP' ? '#4f46e5' : '#ea580c',
                                 cursor: 'pointer',
                               }}
                             >
-                              {banner.position === 'popup' ? 'Popup' : 'Main'}
+                              {banner.position}
                             </span>
                           </td>
                           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                               <span
                                 onClick={(e) => {
-                                  e.stopPropagation();
-                                  setBanners(banners.map(b =>
-                                    b.id === banner.id ? { ...b, isActive: !b.isActive } : b
-                                  ));
+                                  handleToggleBannerIsActivity(e, banner);
                                 }}
                                 style={{
                                   padding: '4px 10px',
@@ -1420,7 +1559,7 @@ export function AdminPage({
                               >
                                 {banner.isActive ? '활성화' : '비활성화'}
                               </span>
-            </div>
+                          </div>
                           </td>
                           <td style={{ verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -1434,7 +1573,7 @@ export function AdminPage({
                                     imageUrl: banner.imageUrl,
                                     linkUrl: banner.linkUrl,
                                     isActive: banner.isActive,
-                                    order: banner.order,
+                                    seq: banner.seq,
                                     position: banner.position,
                                     startDate: banner.startDate,
                                     endDate: banner.endDate,
@@ -1452,7 +1591,7 @@ export function AdminPage({
                                 className={styles.deleteButton}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setBannerToDelete(banner.id);
+                                  setBannerToDelete(banner.no);
                                   setShowBannerDeleteModal(true);
                                 }}
                                 title="삭제"
@@ -1479,7 +1618,7 @@ export function AdminPage({
           {/* 카테고리 관리 탭 */}
           {activeTab === 'categories' && (() => {
             const parentCategories = categories.filter(c => !c.parentId);
-            const getSubCategories = (parentId: string) => categories.filter(c => c.parentId === parentId);
+            const getSubCategories = (parentId: number) => categories.filter(c => c.no === parentId);
             
             return (
               <div className={styles.tabContent}>
@@ -1502,22 +1641,22 @@ export function AdminPage({
 
                 {/* 카테고리 카드 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  {parentCategories.map((parent, parentIndex) => {
-                    const subCategories = getSubCategories(parent.id);
+                {parentCategories.map((parent, parentIndex) => {
+                    const subCategories = getSubCategories(parent.no);
                     
                     return (
                       <DraggableParentCategory
-                        key={parent.id}
+                        key={parent.no}
                         parent={parent}
                         index={parentIndex}
                         moveParentCategory={moveParentCategory}
                         onEdit={() => {
                           setSelectedCategory(parent);
-                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: parent.parentId || null, iconUrl: parent.iconUrl || '' });
+                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: parent.no || null, iconUrl: parent.iconUrl || '' });
                           setShowCategoryModal(true);
                         }}
                         onDelete={() => {
-                          setCategoryToDelete(parent.id);
+                          setCategoryToDelete(parent.no);
                           setShowCategoryDeleteModal(true);
                         }}
                       >
@@ -1530,18 +1669,18 @@ export function AdminPage({
                         }}>
                           {subCategories.map((sub, index) => (
                             <DraggableSubCategory
-                              key={sub.id}
+                              key={sub.no}
                               sub={sub}
                               index={index}
-                              parentId={parent.id}
+                              parentId={parent.no}
                               moveSubCategory={moveSubCategory}
                               onEdit={() => {
                                 setSelectedCategory(sub);
-                                setCategoryFormData({ name: sub.name, description: sub.description, parentId: sub.parentId || null, iconUrl: sub.iconUrl || '' });
+                                setCategoryFormData({ name: sub.name, description: sub.description, parentId: sub.no || null, iconUrl: sub.iconUrl || '' });
                                 setShowCategoryModal(true);
                               }}
                               onDelete={() => {
-                                setCategoryToDelete(sub.id);
+                                setCategoryToDelete(sub.no);
                                 setShowCategoryDeleteModal(true);
                               }}
                             />
@@ -1562,7 +1701,7 @@ export function AdminPage({
                             }}
                             onClick={() => {
                               setSelectedCategory(null);
-                              setCategoryFormData({ name: '', description: '', parentId: parent.id, iconUrl: '' });
+                              setCategoryFormData({ name: '', description: '', parentId: parent.no, iconUrl: '' });
                               setShowCategoryModal(true);
                             }}
                             onMouseEnter={(e) => {
@@ -1572,7 +1711,7 @@ export function AdminPage({
                               e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 166, 81, 0.15)';
                               const icon = e.currentTarget.querySelector('svg');
                               const text = e.currentTarget.querySelector('div');
-                              if (icon) (icon as HTMLElement).style.color = '#00A651';
+                              if (icon) (icon).style.color = '#00A651';
                               if (text) (text as HTMLElement).style.color = '#00A651';
                             }}
                             onMouseLeave={(e) => {
@@ -1582,7 +1721,7 @@ export function AdminPage({
                               e.currentTarget.style.boxShadow = 'none';
                               const icon = e.currentTarget.querySelector('svg');
                               const text = e.currentTarget.querySelector('div');
-                              if (icon) (icon as HTMLElement).style.color = '#9ca3af';
+                              if (icon) (icon).style.color = '#9ca3af';
                               if (text) (text as HTMLElement).style.color = '#9ca3af';
                             }}
                           >
@@ -1627,7 +1766,7 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>이메일</div>
-                <div className={styles.detailValue}>{selectedUser.email}</div>
+                <div className={styles.detailValue}>{selectedUser.userId}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>가입일</div>
@@ -1645,13 +1784,13 @@ export function AdminPage({
                 <div className={styles.detailLabel}>구독 상태</div>
                 <div className={styles.detailValue}>
                   <span className={
-                    selectedUser.isAdmin 
+                    selectedUser.admin 
                       ? styles.badgeAdmin 
                       : selectedUser.isSubscribed 
                       ? styles.badgeSubscribed 
                       : styles.badgeUser
                   }>
-                    {selectedUser.isAdmin ? '관리자' : selectedUser.isSubscribed ? '구독 중' : '미구독'}
+                    {selectedUser.admin ? '관리자' : selectedUser.isSubscribed ? '구독 중' : '미구독'}
                   </span>
                 </div>
               </div>
@@ -1659,13 +1798,13 @@ export function AdminPage({
                 <div className={styles.detailLabel}>신고 횟수</div>
                 <div className={styles.detailValue}>
                   <span className={styles.reportCountBadge}>
-                    {getReportCount(selectedUser.id)}회
+                    {(user.reportCountAtBan)}회
                   </span>
                 </div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>사용자 ID</div>
-                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedUser.id}</div>
+                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedUser.userNo}</div>
               </div>
             </div>
             <div className={styles.modalFooter}>
@@ -1737,15 +1876,15 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>카테고리</div>
-                <div className={styles.detailValue}>{selectedCommunity.category}</div>
+                <div className={styles.detailValue}>{selectedCommunity.category.name}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>리더</div>
-                <div className={styles.detailValue}>{selectedCommunity.leaderName}</div>
+                <div className={styles.detailValue}>{selectedCommunity.host.username}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>멤버 수</div>
-                <div className={styles.detailValue}>{selectedCommunity.memberCount}명</div>
+                <div className={styles.detailValue}>{selectedCommunity.currentMembers}명</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>생성일</div>
@@ -1775,7 +1914,7 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>모임 ID</div>
-                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedCommunity.id}</div>
+                <div className={styles.detailValue} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>#{selectedCommunity.no}</div>
               </div>
             </div>
             <div className={styles.modalFooter}>
@@ -1790,7 +1929,7 @@ export function AdminPage({
                 onClick={() => {
                   // 모임 상세 페이지로 이동
                   if (onNavigateToCommunity) {
-                    onNavigateToCommunity(selectedCommunity.id);
+                    onNavigateToCommunity(selectedCommunity.no);
                   }
                   setShowCommunityDetailModal(false);
                 }}
@@ -1842,7 +1981,7 @@ export function AdminPage({
 
       {/* 신고 삭제 확인 모달 */}
       {showReportDeleteModal && reportToDelete && (() => {
-        const report = reports.find(r => r.id === reportToDelete);
+        const report = reports.find(r => r.no === reportToDelete);
         return (
           <div className={styles.modalOverlay} onClick={() => setShowReportDeleteModal(false)}>
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -1856,9 +1995,9 @@ export function AdminPage({
                 </button>
               </div>
               <div className={styles.modalBody}>
-                {report?.reportedUserName ? (
+                {report?.user.username ? (
                   <p className={styles.modalText}>
-                    신고된 사용자 <strong>{report.reportedUserName}</strong>를 삭제하시겠습니까?<br />
+                    신고된 사용자 <strong>{report.user.username}</strong>를 삭제하시겠습니까?<br />
                     해당 신고 기록도 함께 삭제됩니다.
                   </p>
                 ) : (
@@ -1877,15 +2016,8 @@ export function AdminPage({
                 <button
                   className={styles.modalButtonPrimary}
                   onClick={() => {
-                    // 신고된 사용자가 있으면 삭제
-                    if (report?.reportedUserId) {
-                      setUsers(users.filter(u => u.id !== report.reportedUserId));
-                    }
-                    // 신고 기록 삭제
-                    setReports(reports.filter(r => r.id !== reportToDelete));
+                    handleDeleteReport(reportToDelete);
                     setShowReportDeleteModal(false);
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 2000);
                   }}
                 >
                   삭제
@@ -1896,132 +2028,6 @@ export function AdminPage({
         );
       })()}
 
-      {/* 차단 모달 */}
-      {showBlockModal && userToBlock && (
-        <div className={styles.modalOverlay} onClick={() => setShowBlockModal(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>사용자 차단</h2>
-              <button
-                className={styles.modalCloseButton}
-                onClick={() => setShowBlockModal(false)}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <p className={styles.modalText}>
-                사용자 <strong>{userToBlock.userName}</strong>을(를) 차단하시겠습니까?
-              </p>
-              <div className={styles.blockTypeSelector}>
-                <label>
-                  <input
-                    type="radio"
-                    name="blockType"
-                    value="temporary"
-                    checked={blockType === 'temporary'}
-                    onChange={() => setBlockType('temporary')}
-                  />
-                  일시적 차단
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="blockType"
-                    value="permanent"
-                    checked={blockType === 'permanent'}
-                    onChange={() => setBlockType('permanent')}
-                  />
-                  영구적 차단
-                </label>
-              </div>
-              {blockType === 'temporary' && (
-                <div className={styles.blockEndDate}>
-                  <label>차단 기간 (1일 ~ 90일):</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input
-                      type="number"
-                      value={blockDays}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (value >= 1 && value <= 90) {
-                          setBlockDays(value);
-                        }
-                      }}
-                      min="1"
-                      max="90"
-                      style={{ flex: '0 0 80px' }}
-                    />
-                    <span style={{ color: '#92400e', fontWeight: 600 }}>일</span>
-                  </div>
-                  <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #d97706' }}>
-                    <span style={{ fontSize: '0.875rem', color: '#92400e' }}>차단 종료일: </span>
-                    <span style={{ fontSize: '0.875rem', color: '#92400e', fontWeight: 600 }}>
-                      {new Date(Date.now() + blockDays * 24 * 60 * 60 * 1000).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.modalButtonSecondary}
-                onClick={() => setShowBlockModal(false)}
-              >
-                취소
-              </button>
-              <button
-                className={styles.modalButtonPrimary}
-                onClick={async () => {
-                  // 차단 로직 구현
-                  if (blockType && accessToken) {
-                    try {
-                      const response = await fetch(
-                        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/admin/users/${userToBlock.userId}/block`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${accessToken}`,
-                          },
-                          body: JSON.stringify({
-                            blockType,
-                            blockDays: blockType === 'temporary' ? blockDays : undefined,
-                          }),
-                        }
-                      );
-
-                      if (response.ok) {
-                        const data = await response.json();
-                        console.log('사용자 차단 성공:', data);
-                        setShowBlockModal(false);
-                        setBlockType(null);
-                        setBlockDays(7); // 초기화
-                        setToastMessage('차단 완료 하였습니다');
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 2000);
-                      } else {
-                        const errorData = await response.json();
-                        console.error('차단 실패:', errorData);
-                        alert(errorData.error || '차단에 실패했습니다.');
-                      }
-                    } catch (error) {
-                      console.error('차단 요청 오류:', error);
-                      alert('차단 요청 중 오류가 발생했습니다.');
-                    }
-                  }
-                }}
-              >
-                차단
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 배너 추가/수정 모달 */}
       {showBannerModal && (
@@ -2198,8 +2204,8 @@ export function AdminPage({
                 <input
                   type="number"
                   min="1"
-                  value={bannerFormData.order}
-                  onChange={(e) => setBannerFormData({ ...bannerFormData, order: parseInt(e.target.value) || 1 })}
+                  value={bannerFormData.seq}
+                  onChange={(e) => setBannerFormData({ ...bannerFormData, seq: parseInt(e.target.value) || 1 })}
                   style={{
                     width: '100px',
                     padding: '10px',
@@ -2314,7 +2320,7 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>정렬 순서</div>
-                <div className={styles.detailValue}>{selectedBanner.order}</div>
+                <div className={styles.detailValue}>{selectedBanner.seq}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>클릭 수</div>
@@ -2502,7 +2508,7 @@ export function AdminPage({
                   color: '#6b7280',
                 }}>
                   {categoryFormData.parentId 
-                    ? `소분류 (상위: ${categories.find(c => c.id === categoryFormData.parentId)?.name || '알 수 없음'})` 
+                    ? `소분류 (상위: ${categories.find(c => c.no === categoryFormData.parentId)?.name || '알 수 없음'})` 
                     : '대분류'}
                 </div>
               </div>
@@ -2568,7 +2574,7 @@ export function AdminPage({
                   if (selectedCategory) {
                     // 수정
                     setCategories(categories.map(c =>
-                      c.id === selectedCategory.id
+                      c.no === selectedCategory.no
                         ? { ...c, name: categoryFormData.name, description: categoryFormData.description, parentId: categoryFormData.parentId, iconUrl: categoryFormData.iconUrl }
                         : c
                     ));
@@ -2576,7 +2582,7 @@ export function AdminPage({
                   } else {
                     // 추가
                     const newCategory = {
-                      id: String(Date.now()),
+                      no: categoryFormData.parentId,
                       name: categoryFormData.name,
                       description: categoryFormData.description,
                       createdAt: new Date().toISOString(),
@@ -2618,7 +2624,7 @@ export function AdminPage({
               <p className={styles.modalText}>
                 정말로 이 카테고리를 삭제하시겠습니까?
                 {(() => {
-                  const category = categories.find(c => c.id === categoryToDelete);
+                  const category = categories.find(c => c.no === categoryToDelete);
                   return category && category.communityCount > 0 ? (
                     <><br /><span style={{ color: '#ef4444', fontWeight: '600' }}>
                       현재 {category.communityCount}개의 모임이 이 카테고리를 사용 중입니다.
@@ -2637,7 +2643,7 @@ export function AdminPage({
               <button
                 className={styles.modalButtonPrimary}
                 onClick={() => {
-                  setCategories(categories.filter(c => c.id !== categoryToDelete));
+                  setCategories(categories.filter(c => c.no !== categoryToDelete));
                   setShowCategoryDeleteModal(false);
                   setToastMessage('카테고리가 삭제되었습니다');
                   setShowToast(true);
