@@ -39,7 +39,10 @@ export function ExplorePageWrapper() {
         profileImage={profileImage}
         onLogout={handleLogout}
         initialSearchQuery={searchQuery}
-        onSearchClick={() => setIsSearchModalOpen(true)}
+        onSearchClick={(query) => {
+          const trimmed = (query || '').trim();
+          navigate(trimmed ? `/explore?q=${encodeURIComponent(trimmed)}` : '/explore');
+        }}
       />
       
       <SearchModal

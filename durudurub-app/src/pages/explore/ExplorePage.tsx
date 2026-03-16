@@ -15,7 +15,7 @@ interface ExplorePageProps {
   onMyMeetingsClick: () => void;
   onPaymentClick?: () => void;
   onCreateClick?: () => void;
-  onSearchClick?: () => void;
+  onSearchClick?: (searchQuery?: string) => void;
   user: any;
   accessToken: string | null;
   profileImage: string | null;
@@ -36,13 +36,14 @@ const categories = [
   { id: '기타', name: '기타', icon: '🌟' }
 ];
 
-export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onPaymentClick, onCreateClick, user, accessToken, profileImage, onLogout, initialSearchQuery, initialCategory }: ExplorePageProps) {
+export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onPaymentClick, onCreateClick, onSearchClick, user, accessToken, profileImage, onLogout, initialSearchQuery, initialCategory }: ExplorePageProps) {
   const [communities, setCommunities] = useState<any[]>([]);
   const [filteredCommunities, setFilteredCommunities] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'all');
   const [searchTerm, setSearchTerm] = useState(typeof initialSearchQuery === 'string' ? initialSearchQuery : '');
   const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [brokenHostImages, setBrokenHostImages] = useState<Set<string>>(new Set());
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginModalMessage, setLoginModalMessage] = useState('');
   const [sortOrder, setSortOrder] = useState<'latest' | 'popular' | 'name'>('latest');
@@ -54,6 +55,14 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   useEffect(() => {
     filterCommunities();
   }, [communities, selectedCategory, searchTerm]);
+
+  useEffect(() => {
+    setSearchTerm(typeof initialSearchQuery === 'string' ? initialSearchQuery : '');
+  }, [initialSearchQuery]);
+
+  useEffect(() => {
+    setSelectedCategory(initialCategory || 'all');
+  }, [initialCategory]);
 
   useEffect(() => {
     if (!user || communities.length === 0) {
@@ -142,7 +151,71 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
       );
     }
 
-    setFilteredCommunities(filtered);
+    const getMemberNickname = (member: any): string => {
+      if (!member) return '';
+      return (
+        member.user?.username ||
+        member.user?.nickname ||
+        member.user?.name ||
+        member.nickname ||
+        member.username ||
+        member.name ||
+        ''
+      );
+    };
+
+    const getMemberProfileImg = (member: any): string => {
+      if (!member) return '';
+      return (
+        member.user?.profileImg ||
+        member.profileImg ||
+        ''
+      );
+    };
+
+    // 각 community의 host를 우선 host_no로 찾고, 없으면 clubMembers의 첫 번째 멤버로 지정
+    const filteredWithHost = filtered.map((community) => {
+      let hostNickname =
+        community.host?.username ||
+        community.host?.nickname ||
+        community.host?.name ||
+        '';
+      let hostProfileImg =
+        community.host?.profileImg ||
+        '';
+
+      if (Array.isArray(community.clubMembers) && community.clubMembers.length > 0) {
+        const hostMemberByHostNo = community.host_no
+          ? community.clubMembers.find((member) => String(member.user_no) === String(community.host_no))
+          : undefined;
+
+        const fallbackFirstMember = community.clubMembers[0];
+        const selectedHostMember = hostMemberByHostNo || fallbackFirstMember;
+        const selectedNickname = getMemberNickname(selectedHostMember);
+        const selectedProfileImg = getMemberProfileImg(selectedHostMember);
+
+        if (selectedNickname.trim() !== '') {
+          hostNickname = selectedNickname;
+        }
+
+        if (selectedProfileImg.trim() !== '') {
+          hostProfileImg = selectedProfileImg;
+        }
+      }
+
+      const host = {
+        ...(community.host || {}),
+        nickname: hostNickname,
+        profileImg: hostProfileImg
+      };
+
+      return {
+        ...community,
+        host
+      };
+    });
+
+    setFilteredCommunities(filteredWithHost);
   };
 
   const toggleFavorite = async (communityId: string, e: React.MouseEvent) => {
@@ -179,7 +252,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
         )
       );
     } catch (e) {
-      console.error('좋아요 반영 실패 : ', e);
+      console.error('즐겨찾기 반영 실패 : ', e);
     }
   };
 
@@ -195,6 +268,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
         onMiniGameClick={onMiniGameClick}
         onMyMeetingsClick={onMyMeetingsClick}
         onPaymentClick={onPaymentClick}
+        onExploreClick={onSearchClick}
         user={user}
         profileImage={profileImage}
         onLogout={onLogout}
@@ -291,10 +365,17 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCommunities.map((community) => (
+            {filteredCommunities.map((community) => {
+              const communityId = String(community.no);
+              const hostNickname = (community.host?.nickname || '').trim();
+              const hostInitial = hostNickname ? hostNickname.charAt(0) : '?';
+              const hostProfileImg = (community.host?.profileImg || '').trim();
+              const canShowHostProfileImg = hostProfileImg !== '' && !brokenHostImages.has(communityId);
+
+              return (
               <div
                 key={community.no}
-                onClick={() => onCommunityClick(String(community.no))}
+                onClick={() => onCommunityClick(communityId)}
                 className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-[#00A651] transform hover:-translate-y-1"
               >
                 {/* 데스크톱 버전 - 세로형 레이아웃 */}
@@ -315,7 +396,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                     
                     {/* 즐겨찾기 버튼 */}
                     <button
-                      onClick={(e) => toggleFavorite(String(community.no), e)}
+                      onClick={(e) => toggleFavorite(communityId, e)}
                       className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
                     >
                       <Heart
@@ -355,11 +436,26 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
 
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-[#00A651] rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                          {(community.host?.nickname || '호스트').charAt(0)}
-                        </div>
+                        {canShowHostProfileImg ? (
+                          <img
+                            src={hostProfileImg}
+                            alt={hostNickname || '리더'}
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={() => {
+                              setBrokenHostImages((prev) => {
+                                const next = new Set(prev);
+                                next.add(communityId);
+                                return next;
+                              });
+                            }}
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-[#00A651] rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                            {hostInitial}
+                          </div>
+                        )}
                         <span className="ml-2 text-sm text-gray-700 font-medium">
-                          {community.host?.nickname || '호스트'}
+                          {`${hostNickname || '알 수 없음'}`}
                         </span>
                       </div>
                     </div>
@@ -384,7 +480,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                     
                     {/* 즐겨찾기 버튼 */}
                     <button
-                      onClick={(e) => toggleFavorite(String(community.no), e)}
+                      onClick={(e) => toggleFavorite(communityId, e)}
                       className="absolute top-1 right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md"
                     >
                       <Heart
@@ -418,11 +514,26 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                     {/* 리더 정보와 인원 수 */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center min-w-0 flex-1">
-                        <div className="w-5 h-5 bg-[#00A651] rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0">
-                          {(community.host?.nickname || '호스트').charAt(0)}
-                        </div>
+                        {canShowHostProfileImg ? (
+                          <img
+                            src={hostProfileImg}
+                            alt={hostNickname || '리더'}
+                            className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                            onError={() => {
+                              setBrokenHostImages((prev) => {
+                                const next = new Set(prev);
+                                next.add(communityId);
+                                return next;
+                              });
+                            }}
+                          />
+                        ) : (
+                          <div className="w-5 h-5 bg-[#00A651] rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0">
+                            {hostInitial}
+                          </div>
+                        )}
                         <span className="ml-1.5 text-xs text-gray-700 font-medium truncate">
-                          {community.host?.nickname || '호스트'}
+                          {`리더:${hostNickname || '알 수 없음'}`}
                         </span>
                       </div>
                       <div className="flex items-center text-xs text-gray-500 ml-2 flex-shrink-0">
@@ -433,7 +544,8 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

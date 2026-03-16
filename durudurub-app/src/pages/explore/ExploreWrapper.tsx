@@ -28,6 +28,10 @@ export default function ExploreWrapper() {
       profileImage={profileImage}
       initialSearchQuery={searchParams.get('q') || ''}
       initialCategory={searchParams.get('category') || ''}
+      onSearchClick={(query) => {
+        const trimmed = (query || '').trim();
+        navigate(trimmed ? `/explore?q=${encodeURIComponent(trimmed)}` : '/explore');
+      }}
     />
   );
 }
