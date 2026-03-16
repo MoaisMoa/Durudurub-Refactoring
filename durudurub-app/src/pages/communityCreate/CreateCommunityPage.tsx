@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Upload, MapPin, Calendar, Users, FileText, ArrowLeft } from 'lucide-react';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
-import { Navbar } from '@/app/components/Navbar';
+import api from '@/api/axios';
+import { Navbar } from '@/components/header/Navbar';
 
 // 커스텀 마커 아이콘 생성
 const customIcon = L.divIcon({
@@ -46,7 +46,6 @@ const customIcon = L.divIcon({
 interface CreateCommunityPageProps {
   onBack: () => void;
   user: any;
-  accessToken: string;
   onSignupClick: () => void;
   onLoginClick: () => void;
   onLogoClick: () => void;
@@ -58,27 +57,18 @@ interface CreateCommunityPageProps {
   onLogout: () => void;
 }
 
-function LocationMarker({ position, setPosition }: { position: [number, number] | null, setPosition: (pos: [number, number]) => void }) {
-  useMapEvents({
-    click(e) {
-      setPosition([e.latlng.lat, e.latlng.lng]);
-    },
-  });
-
-  return position === null ? null : <Marker position={position} />;
-}
-
-export function CreateCommunityPage({ onBack, user, accessToken, onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, profileImage, onLogout }: CreateCommunityPageProps) {
+export function CreateCommunityPage({ onBack, user, onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, profileImage, onLogout }: CreateCommunityPageProps) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '',
-    subcategory: '',
+    categoryNo: '',
+    subCategoryNo: '',
     location: '서울특별시 강남구 테헤란로 152',
-    maxParticipants: '',
-    schedule: '',
-    imageUrl: ''
+    maxMembers: '',
+    clubDate: '',
   });
+  const [apiCategories, setApiCategories] = useState<any[]>([]);
+  const [apiSubCategories, setApiSubCategories] = useState<any[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,6 +77,24 @@ export function CreateCommunityPage({ onBack, user, accessToken, onSignupClick, 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+
+  // 카테고리 목록 조회
+  useEffect(() => {
+    api.get('/api/clubs/categories')
+      .then(res => setApiCategories(res.data))
+      .catch(err => console.error('카테고리 조회 실패', err));
+  }, []);
+
+  // 소분류 카테고리 조회
+  useEffect(() => {
+    if (formData.categoryNo) {
+      api.get(`/api/clubs/subcategories/${formData.categoryNo}`)
+        .then(res => setApiSubCategories(res.data))
+        .catch(err => console.error('소분류 조회 실패', err));
+    } else {
+      setApiSubCategories([]);
+    }
+  }, [formData.categoryNo]);
 
   // 지도 초기화
   useEffect(() => {
@@ -123,30 +131,7 @@ export function CreateCommunityPage({ onBack, user, accessToken, onSignupClick, 
     };
   }, []);
 
-  const categories = [
-    '자기계발',
-    '스포츠',
-    '푸드',
-    '게임',
-    '동네친구',
-    '여행',
-    '예술',
-    '반려동물'
-  ];
 
-  // 소분류 카테고리 정의
-  const subcategories: { [key: string]: string[] } = {
-    '자기계발': ['독서', '스피치', '면접', '회화', '기타'],
-    '스포츠': ['러닝', '테니스', '풋살', '축구', '기타'],
-    '푸드': ['맛집', '빵투어', '베이킹', '한식', '기타'],
-    '게임': ['보드게임', '인터넷게임', '카드게임', '기타'],
-    '동네친구': ['술 친구', '액티브 놀이', '기타'],
-    '여행': ['국내여행', '해외여행', '당일치기', '패키지여행', '기타'],
-    '예술': ['미술', '음악', '연극', '뮤지컬', '기타'],
-    '반려동물': ['간식 나눔', '산책', '애견카페', '기타'],
-  };
-
-  const currentSubcategories = formData.category ? subcategories[formData.category] || [] : [];
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,45 +151,31 @@ export function CreateCommunityPage({ onBack, user, accessToken, onSignupClick, 
     setIsSubmitting(true);
 
     try {
-      // 이미지 업로드 (실제로는 Supabase Storage 사용)
-      let uploadedImageUrl = formData.imageUrl;
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('description', formData.description);
+      data.append('categoryNo', formData.categoryNo);
+      if (formData.subCategoryNo) {
+        data.append('subCategoryNo', formData.subCategoryNo);
+      }
+      data.append('location', formData.location);
+      data.append('maxMembers', formData.maxMembers);
+      data.append('clubDate', formData.clubDate);
+      data.append('lat', String(markerPosition[0]));
+      data.append('lng', String(markerPosition[1]));
       if (imageFile) {
-        // 임시로 Unsplash 이미지 사용
-        uploadedImageUrl = 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800';
+        data.append('thumbnail', imageFile);
       }
 
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`
-          },
-          body: JSON.stringify({
-            title: formData.title,
-            description: formData.description,
-            category: formData.category,
-            subcategory: formData.subcategory,
-            location: formData.location,
-            max_participants: parseInt(formData.maxParticipants),
-            schedule: formData.schedule,
-            image_url: uploadedImageUrl,
-            host_id: user.id
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '모임 생성에 실패했습니다.');
-      }
+      await api.post('/api/clubs', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       alert('모임이 성공적으로 생성되었습니다!');
       onBack();
     } catch (err: any) {
       console.error('Error creating community:', err);
-      setError(err.message || '모임 생성 중 오류가 발생했습니다.');
+      setError(err.response?.data || err.message || '모임 생성 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -290,39 +261,39 @@ export function CreateCommunityPage({ onBack, user, accessToken, onSignupClick, 
 
           {/* 카테고리 */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="categoryNo" className="block text-sm font-medium text-gray-700 mb-2">
               카테고리 *
             </label>
             <select
-              id="category"
+              id="categoryNo"
               required
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              value={formData.categoryNo}
+              onChange={(e) => setFormData({ ...formData, categoryNo: e.target.value, subCategoryNo: '' })}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
             >
               <option value="">카테고리를 선택하세요</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+              {apiCategories.map((cat) => (
+                <option key={cat.no} value={cat.no}>{cat.name}</option>
               ))}
             </select>
           </div>
 
           {/* 소분류 카테고리 */}
-          {currentSubcategories.length > 0 && (
+          {apiSubCategories.length > 0 && (
             <div>
-              <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="subCategoryNo" className="block text-sm font-medium text-gray-700 mb-2">
                 소분류 카테고리 *
               </label>
               <select
-                id="subcategory"
+                id="subCategoryNo"
                 required
-                value={formData.subcategory}
-                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                value={formData.subCategoryNo}
+                onChange={(e) => setFormData({ ...formData, subCategoryNo: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
               >
                 <option value="">소분류 카테고리를 선택하세요</option>
-                {currentSubcategories.map((subcat) => (
-                  <option key={subcat} value={subcat}>{subcat}</option>
+                {apiSubCategories.map((subcat: any) => (
+                  <option key={subcat.no} value={subcat.no}>{subcat.name}</option>
                 ))}
               </select>
             </div>
@@ -366,18 +337,18 @@ export function CreateCommunityPage({ onBack, user, accessToken, onSignupClick, 
 
           {/* 최대 인원 */}
           <div>
-            <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="maxMembers" className="block text-sm font-medium text-gray-700 mb-2">
               <Users className="w-4 h-4 inline mr-1" />
               최대 인원 *
             </label>
             <input
               type="number"
-              id="maxParticipants"
+              id="maxMembers"
               required
               min="2"
               max="50"
-              value={formData.maxParticipants}
-              onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
+              value={formData.maxMembers}
+              onChange={(e) => setFormData({ ...formData, maxMembers: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
               placeholder="예: 20"
             />
@@ -386,18 +357,17 @@ export function CreateCommunityPage({ onBack, user, accessToken, onSignupClick, 
 
           {/* 일정 */}
           <div>
-            <label htmlFor="schedule" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="clubDate" className="block text-sm font-medium text-gray-700 mb-2">
               <Calendar className="w-4 h-4 inline mr-1" />
               모임 일정 *
             </label>
             <input
-              type="text"
-              id="schedule"
+              type="datetime-local"
+              id="clubDate"
               required
-              value={formData.schedule}
-              onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
+              value={formData.clubDate}
+              onChange={(e) => setFormData({ ...formData, clubDate: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
-              placeholder="예: 매주 토요일 오전 9시"
             />
           </div>
 

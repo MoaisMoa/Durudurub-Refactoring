@@ -1,6 +1,7 @@
 import React from 'react'
 import { Navbar } from '@/components/header/Navbar'
 import { useNavigate } from "react-router-dom";
+import { useApp } from '@/contexts/AppContext';
 
 interface LayoutProps {
   children: React.ReactNode
@@ -9,6 +10,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
 
   const navigate = useNavigate();
+  const { user, profileImage, handleLogout } = useApp();
 
   const handleLogoClick = () => navigate('/');
 
@@ -37,6 +39,9 @@ const Layout = ({ children }: LayoutProps) => {
         onMyMeetingsClick={() => navigate("/meetings")}
         onNoticeClick={() => navigate("/notice")}
         onAdminClick={() => navigate("/admin")}
+        user={user}
+        profileImage={profileImage}
+        onLogout={handleLogout}
       />
       <div className="container mx-auto px-4">
         {children}

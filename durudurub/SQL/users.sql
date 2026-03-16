@@ -1,3 +1,4 @@
+-- Active: 1769407808565@@127.0.0.1@3306@durudurub
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `users`;
