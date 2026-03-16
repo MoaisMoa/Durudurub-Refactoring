@@ -50,7 +50,7 @@ export function BottomNavigation({
       id: 'category',
       icon: LayoutGrid,
       label: '카테고리',
-      onClick: onCategoryClick,
+      onClick: () => navigate('/explore'),
     },
     {
       id: 'mypage',
