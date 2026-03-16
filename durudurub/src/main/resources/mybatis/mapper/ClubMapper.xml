@@ -222,13 +222,18 @@
     <!-- 마이페이지 : 내모임 관리 -->
     <!-- 참여/승인대기 리스트 -->
     <select id="myClubList" resultMap="clubResultMap">
-        SELECT c.*
+         SELECT 
+            c.*,
+            cat.no AS cat_no,
+            cat.name AS cat_name,
+            cat.icon AS cat_icon
         FROM club_members m
         JOIN clubs c ON m.club_no = c.no
+        LEFT JOIN categories cat ON c.category_no = cat.no
         WHERE m.user_no = #{userNo} 
             AND m.status = #{status}
             AND c.host_no != #{userNo}
-            ORDER BY m.joined_at DESC
+        ORDER BY m.joined_at DESC
     </select>
     <!-- 참여/리더/승인대기 개수 -->
     <select id="countByStatus" resultType="int">

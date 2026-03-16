@@ -20,30 +20,57 @@ interface MyGroupsManagementProps {
 }
 
 interface Member {
-  id: string;
-  userId: string;
-  username: string;
-  joinedAt: string;
-  status: 'pending' | 'approved';
+  no: number
+  clubNo: number
+  userNo: number
+  status: 'PENDING' | 'APPROVED'
+  joinedAt: string
+  user: {
+    no: number
+    username: string
+    profileImg?: string
+  }
+}
+
+interface Club {
+  no: number
+  title: string
+  description?: string
+  location?: string
+
+  host: {
+    no: number;
+  } | null
+  
+  category: {
+    no: number
+    name: string
+  } | null
+
+  subCategory: {
+    no: number
+    name: string
+  } | null
+
+  currentMembers: number
+  maxMembers: number
+
+  thumbnailImg?: string
+  clubDate?: string
 }
 
 interface Group {
-  no: number;
-  title: string;
-  category: string;
-  currentMembers: number;
-  maxMembers: number;
-  imageUrl?: string;
-  role: 'leader' | 'member';
-  status: 'approved' | 'pending';
-  members?: Member[];
+  role: 'leader'
+  club: Club
+  pendingMembers: Member[]
+  approvedMembers: Member[]
 }
 
 interface ConfirmModal {
   isOpen: boolean;
   type: 'approve' | 'reject' | 'remove' | 'deleteGroup' | 'cancelRequest' | null;
   groupNo: number | null;
-  memberId: string | null;
+  memberId: number | null;
   memberName: string | null;
 }
 
@@ -59,60 +86,125 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
   });
   const [loading, setLoading] = useState(false);
 
-  const [joinedGroups, setJoinedGroups] = useState<Group[]>([]);
+  const [joinedGroups, setJoinedGroups] = useState<Club[]>([]);
 
   const [leaderGroups, setLeaderGroups] = useState<Group[]>([]);
 
-  const [pendingGroups, setPendingGroups] = useState<Group[]>([]);
+  const [pendingGroups, setPendingGroups] = useState<Club[]>([]);
 
-  const handleLeaveGroup = (groupNo: number, groupName: string) => {
+  const handleLeaveGroup = async (
+    clubNo: number, groupName: string
+  ) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/users/mypage/club/${clubNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("서버 에러:", text);
+        throw new Error("탈퇴 실패");
+      }
+
+      console.log(res.status);
+      
+      // 상태에서 제거
+      setJoinedGroups(prev =>
+        prev.filter(club => club.no !== clubNo)
+      );
+
+    } catch (error) {
+      console.error("탈퇴 실패:", error)
+    }
+  };
+
+  const handleApproveMember = async (
+    groupNo: number, memberId: number, memberName: string
+  ) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/users/mypage/club/hostClub/${groupNo}/members/${memberId}/approved`, { 
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+       if (!res.ok) {throw new Error("승인 실패")};
+
+       // 성공 시 목록 다시 로드
+      loadLeaderGroups()
+
+      const data = await res.json();
+      console.log("approvedMemberData >>>>", data);
+      setLeaderGroups(data || [])
+    } catch (error) {
+      console.error("멤버 승인 실패:", error)
+    }
+  };
+
+  const handleRejectMember = async(
+    groupNo: number, memberId: number, memberName: string
+  ) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/users/mypage/club/hostClub/${groupNo}/members/${memberId}/reject`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+       if (!res.ok) {throw new Error("거부 실패")};
+
+       // 성공 시 목록 다시 로드
+      loadLeaderGroups()
+
+      const data = await res.json();
+      console.log("rejectMemberData >>>>", data);
+      setLeaderGroups(data || [])
+    } catch (error) {
+      console.error("멤버 거부 실패:", error)
+    }
+  };
+
+  const handleRemoveMember = (groupNo: number, memberId: number, memberName: string) => {
     setConfirmModal({
       isOpen: true,
       type: 'remove',
       groupNo: groupNo,
-      memberId: null,
-      memberName: groupName,
-    });
-  };
-
-  const handleApproveMember = (groupNo: number, memberId: string, memberName: string) => {
-    setConfirmModal({
-      isOpen: true,
-      type: 'approve',
-      groupNo: groupNo,
       memberId: memberId,
       memberName: memberName,
     });
   };
 
-  const handleRejectMember = (groupNo: number, memberId: string, memberName: string) => {
-    setConfirmModal({
-      isOpen: true,
-      type: 'reject',
-      groupNo: groupNo,
-      memberId: memberId,
-      memberName: memberName,
-    });
-  };
+  const handleDeleteGroup = async (
+    groupNo: number, groupName: string
+  ) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/users/mypage/club/hostClub/${groupNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
 
-  const handleRemoveMember = (groupNo: number, memberId: string, memberName: string) => {
-    setConfirmModal({
-      isOpen: true,
-      type: 'remove',
-      groupNo: groupNo,
-      memberId: memberId,
-      memberName: memberName,
-    });
-  };
+       if (!res.ok) {throw new Error("모임 삭제 실패")};
 
-  const handleDeleteGroup = (groupNo: number, groupName: string) => {
-    setConfirmModal({
-      isOpen: true,
-      type: 'deleteGroup',
-      groupNo: groupNo,
-      memberId: null,
-      memberName: groupName,
-    });
+       // 성공 시 목록 다시 로드
+      loadLeaderGroups()
+
+      const data = await res.json();
+      console.log("rejectMemberData >>>>", data);
+      setLeaderGroups(data || [])
+    } catch (error) {
+      console.error("모임 삭제 실패:", error)
+    }
   };
 
   const handleCancelRequest = (groupNo: number, groupName: string) => {
@@ -139,9 +231,9 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
       const token = sessionStorage.getItem('accessToken');
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch('/api/users/mypage/club/fragment/approvedClub', { headers });
+      const res = await fetch('/api/users/mypage/club/approvedClub', { headers });
       const data = await res.json();
-      console.log("data .....", data);
+      console.log("JoinedGroupsData .....", data);
       setJoinedGroups(data || [])
     } catch (error) {
       console.error('내모임(가입) 조회 실패 : ', error);
@@ -160,9 +252,9 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
       const token = sessionStorage.getItem('accessToken');
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch('/api/users/mypage/club/fragment/hostClub', { headers });
+      const res = await fetch('/api/users/mypage/club/hostClub', { headers });
       const data = await res.json();
-      console.log("data .....", data);
+      console.log("LeadersGroupsData .....", data);
       setLeaderGroups(data || [])
     } catch (error) {
       console.error('내모임(리더) 조회 실패 : ', error);
@@ -181,9 +273,9 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
       const token = sessionStorage.getItem('accessToken');
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch('/api/users/mypage/club/fragment/pendingClub', { headers });
+      const res = await fetch('/api/users/mypage/club/pendingClub', { headers });
       const data = await res.json();
-      console.log("data .....", data);
+      console.log("PendingGroupsdata .....", data);
       setPendingGroups(data || [])
     } catch (error) {
       console.error('내모임(승인) 조회 실패 : ', error);
@@ -209,7 +301,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
 
       // ⭐ state에서 제거
       setPendingGroups(prev =>
-        prev.filter(group => group.no !== clubNo)
+        prev.filter(club => club.no !== clubNo)
       );
 
       console.log("setPendingGroups >>>", setPendingGroups)
@@ -220,23 +312,70 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
     }
   }
 
+  const renderJoinedCard = (club: Club) => {
+  const handleCardClick = () => {
+    onCommunityClick?.(club.no);
+  };
+
+  return (
+    <div key={club.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div
+        className="flex items-start justify-between cursor-pointer hover:bg-gray-50 -m-6 p-6 rounded-xl transition-colors"
+        onClick={handleCardClick}
+      >
+        <div className="flex items-start gap-4 flex-1">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#00A651] to-[#008f46] rounded-lg flex items-center justify-center">
+            <Users className="w-8 h-8 text-white" />
+          </div>
+
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-gray-900">{club.title}</h3>
+
+            <p className="text-sm text-gray-600 mb-2">
+              {club.category?.name}
+            </p>
+
+            <p className="text-sm text-gray-500">
+              멤버 {club.currentMembers}/{club.maxMembers}명
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleLeaveGroup(club.no, club.title);
+          }}
+          className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+          탈퇴
+        </button>
+      </div>
+    </div>
+  );
+};
+
   const renderGroupCard = (group: Group, showLeaveButton: boolean, showManagement: boolean) => {
-    const isExpanded = expandedGroup === group.no;
-    const pendingMembers = group.members?.filter(m => m.status === 'pending') || [];
-    const approvedMembers = group.members?.filter(m => m.status === 'approved') || [];
+    const isExpanded = expandedGroup === group.club.no;
+    const pendingMembers = group.pendingMembers?.filter(m => m.status === 'PENDING') || [];
+    const approvedMembers = group.approvedMembers?.filter(m => m.status === 'APPROVED') || [];
+
+    console.log("pendingMember >>>> ", pendingMembers)
+    console.log("approvedMembers >>>> ", approvedMembers)
 
     const handleCardClick = () => {
-      console.log('카드 클릭됨:', group.no, group.title);
+      console.log('카드 클릭됨:', group.club.no, group.club.title);
       if (onCommunityClick) {
         console.log('onCommunityClick 호출');
-        onCommunityClick(group.no);
+        onCommunityClick(group.club.no);
       } else {
         console.log('onCommunityClick이 정의되지 않음');
       }
     };
 
     return (
-      <div key={group.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div key={group.club.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <div 
           className="flex items-start justify-between cursor-pointer hover:bg-gray-50 -m-6 p-6 rounded-xl transition-colors"
           onClick={handleCardClick}
@@ -247,21 +386,21 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-bold text-gray-900">{group.title}</h3>
+                <h3 className="text-lg font-bold text-gray-900">{group.club.title}</h3>
                 {group.role === 'leader' && (
                   <Crown className="w-5 h-5 text-yellow-500" />
                 )}
               </div>
-              <p className="text-sm text-gray-600 mb-2">{group.category}</p>
+              <p className="text-sm text-gray-600 mb-2">{group.club.category.name}</p>
               <p className="text-sm text-gray-500">
-                멤버 {group.currentMembers}/{group.maxMembers}명
+                멤버 {group.club.currentMembers}/{group.club.maxMembers}명
               </p>
             </div>
           </div>
           <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
             {showLeaveButton && (
               <button
-                onClick={() => handleLeaveGroup(group.no, group.title)}
+                onClick={() => handleLeaveGroup(group.club.no, group.club.title)}
                 className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -271,14 +410,14 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
             {showManagement && (
               <>
                 <button
-                  onClick={() => toggleGroupExpansion(group.no)}
+                  onClick={() => toggleGroupExpansion(group.club.no)}
                   className="flex items-center gap-1 px-4 py-2 text-sm text-[#00A651] hover:bg-[#00A651]/10 rounded-lg transition-colors"
                 >
                   멤버 관리
                   {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 <button
-                  onClick={() => handleDeleteGroup(group.no, group.title)}
+                  onClick={() => handleDeleteGroup(group.club.no, group.club.title)}
                   className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -302,23 +441,23 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                 <div className="space-y-2">
                   {pendingMembers.map((member) => (
                     <div
-                      key={member.id}
+                      key={member.user.no}
                       className="flex items-center justify-between bg-orange-50 rounded-lg p-3"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">{member.username}</p>
-                        <p className="text-xs text-gray-500">신청일: {member.joinedAt}</p>
+                        <p className="font-medium text-gray-900">{member.user.username}</p>
+                        <p className="text-xs text-gray-500">신청일: {member.joinedAt.slice(0, 10)}</p>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleApproveMember(group.no, member.id, member.username)}
+                          onClick={() => handleApproveMember(group.club.no, member.user.no, member.user.username)}
                           className="flex items-center gap-1 px-3 py-1.5 bg-[#00A651] text-white text-sm rounded-lg hover:bg-[#008f46] transition-colors"
                         >
                           <UserCheck className="w-4 h-4" />
                           승인
                         </button>
                         <button
-                          onClick={() => handleRejectMember(group.no, member.id, member.username)}
+                          onClick={() => handleRejectMember(group.club.no, member.user.no, member.user.username)}
                           className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
                         >
                           <UserX className="w-4 h-4" />
@@ -339,19 +478,21 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
               <div className="space-y-2">
                 {approvedMembers.map((member) => (
                   <div
-                    key={member.id}
+                    key={member.user.no}
                     className="flex items-center justify-between bg-gray-50 rounded-lg p-3"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{member.username}</p>
-                      <p className="text-xs text-gray-500">가입일: {member.joinedAt}</p>
+                      <p className="font-medium text-gray-900">{member.user.username}</p>
+                      <p className="text-xs text-gray-500">가입일: {member.joinedAt.slice(0, 10)}</p>
                     </div>
-                    <button
-                      onClick={() => handleRemoveMember(group.no, member.id, member.username)}
-                      className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      추방하기
-                    </button>
+                    {member.user.no !== group.club.host.no && ( 
+                      <button
+                        onClick={() => handleRemoveMember(group.club.no, member.user.no, member.user.username)}
+                        className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        추방하기
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -457,7 +598,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
           {activeTab === 'joined' && (
             <>
               {joinedGroups.length > 0 ? (
-                joinedGroups.map((group) => renderGroupCard(group, true, false))
+                joinedGroups.map((club) => renderJoinedCard(club))
               ) : (
                 <div className="bg-white rounded-xl shadow-sm p-12 text-center border border-gray-100">
                   <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -483,8 +624,8 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
           {activeTab === 'pending' && (
             <>
               {pendingGroups.length > 0 ? (
-                pendingGroups.map((group) => (
-                  <div key={group.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                pendingGroups.map((club) => (
+                  <div key={club.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
                         <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
@@ -492,19 +633,19 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-bold text-gray-900">{group.title}</h3>
+                            <h3 className="text-lg font-bold text-gray-900">{club.title}</h3>
                             <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
                               승인 대기 중
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{group.category}</p>
+                          <p className="text-sm text-gray-600 mb-2">{club.category.name}</p>
                           <p className="text-sm text-gray-500">
-                            멤버 {group.currentMembers}/{group.maxMembers}명
+                            멤버 {club.currentMembers}/{club.maxMembers}명
                           </p>
                         </div>
                       </div>
                       <button
-                        onClick={() => handleCancelRequest(group.no, group.title)}
+                        onClick={() => handleCancelRequest(club.no, club.title)}
                         className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <X className="w-4 h-4" />
@@ -586,7 +727,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                         <span className="font-semibold text-gray-900">{confirmModal.memberName}</span>님을 모임에서 내보내시겠습니까?
                       </p>
                       <p className="text-sm text-gray-600">
-                        내보내면 해당 멤버�� 더 이상 모임 활동을 할 수 없습니다.
+                        내보내면 해당 멤버는 더 이상 모임 활동을 할 수 없습니다.
                       </p>
                     </>
                   )}
@@ -629,11 +770,11 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                     // 멤버 승인
                     setLeaderGroups(prevGroups =>
                       prevGroups.map(group => {
-                        if (group.no === confirmModal.groupNo) {
+                        if (group.club.no === confirmModal.groupNo) {
                           return {
                             ...group,
-                            members: group.members?.map(member => 
-                              member.id === confirmModal.memberId 
+                            members: group.approvedMembers?.map(member => 
+                              member.user.no === confirmModal.memberId 
                                 ? { ...member, status: 'approved' as const } 
                                 : member
                             )
@@ -647,10 +788,10 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                     // 멤버 거부 - 리스트에서 제거
                     setLeaderGroups(prevGroups =>
                       prevGroups.map(group => {
-                        if (group.no === confirmModal.groupNo) {
+                        if (group.club.no === confirmModal.groupNo) {
                           return {
                             ...group,
-                            members: group.members?.filter(member => member.id !== confirmModal.memberId)
+                            members: group.approvedMembers?.filter(member => member.user.no !== confirmModal.memberId)
                           };
                         }
                         return group;
@@ -661,18 +802,18 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                     if (confirmModal.memberId === null) {
                       // 모임 탈퇴 - 리스트에서 해당 모임 제거
                       setJoinedGroups(prevGroups => 
-                        prevGroups.filter(group => group.no !== confirmModal.groupNo)
+                        prevGroups.filter(club => club.no !== confirmModal.groupNo)
                       );
                       toast.success('모임에서 탈퇴했습니다.');
                     } else {
                       // 멤버 내보내기 - 해당 멤버 제거
                       setLeaderGroups(prevGroups =>
                         prevGroups.map(group => {
-                          if (group.no === confirmModal.groupNo) {
+                          if (group.club.no === confirmModal.groupNo) {
                             return {
                               ...group,
-                              members: group.members?.filter(member => member.id !== confirmModal.memberId),
-                              memberCount: group.currentMembers - 1
+                              members: group.approvedMembers?.filter(member => member.user.no !== confirmModal.memberId),
+                              memberCount: group.club.currentMembers - 1
                             };
                           }
                           return group;
@@ -683,13 +824,13 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                   } else if (confirmModal.type === 'deleteGroup') {
                     // 모임 삭제 - 리스트에서 해당 모임 제거
                     setLeaderGroups(prevGroups => 
-                      prevGroups.filter(group => group.no !== confirmModal.groupNo)
+                      prevGroups.filter(group => group.club.no !== confirmModal.groupNo)
                     );
                     toast.success('모임이 삭제되었습니다.');
                   } else if (confirmModal.type === 'cancelRequest') {
                     // 가입 신청 취소 - 리스트에서 해당 모임 제거
                     setPendingGroups(prevGroups => 
-                      prevGroups.filter(group => group.no !== confirmModal.groupNo)
+                      prevGroups.filter(club => club.no !== confirmModal.groupNo)
                     );
                     if (confirmModal.groupNo) {
                       cancelPending(confirmModal.groupNo);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Calendar, Heart, ArrowLeft, X, LogIn } from 'lucide-react';
+import { Search, MapPin, Users, Calendar, Heart, ArrowLeft, X, LogIn, Plus } from 'lucide-react';
 import { Navbar } from '@/components/header/Navbar';
 
 
@@ -14,6 +14,8 @@ interface ExplorePageProps {
   onMiniGameClick: () => void;
   onMyMeetingsClick: () => void;
   onPaymentClick?: () => void;
+  onCreateClick?: () => void;
+  onSearchClick?: () => void;
   user: any;
   accessToken: string | null;
   profileImage: string | null;
@@ -34,7 +36,7 @@ const categories = [
   { id: '기타', name: '기타', icon: '🌟' }
 ];
 
-export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onPaymentClick, user, accessToken, profileImage, onLogout, initialSearchQuery, initialCategory }: ExplorePageProps) {
+export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onPaymentClick, onCreateClick, user, accessToken, profileImage, onLogout, initialSearchQuery, initialCategory }: ExplorePageProps) {
   const [communities, setCommunities] = useState<any[]>([]);
   const [filteredCommunities, setFilteredCommunities] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'all');
@@ -42,6 +44,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMessage, setLoginModalMessage] = useState('');
   const [sortOrder, setSortOrder] = useState<'latest' | 'popular' | 'name'>('latest');
 
   useEffect(() => {
@@ -99,7 +102,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   const toggleFavorite = async (communityId: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!user) { setShowLoginModal(true); return; }
+    if (!user) { setLoginModalMessage('즐겨찾기 기능을 사용하려면 로그인해주세요'); setShowLoginModal(true); return; }
     try {
       const token = sessionStorage.getItem('accessToken');
       const headers: Record<string, string> = {};
@@ -185,11 +188,25 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
           </div>
         </div>
 
-        {/* 결과 개수 */}
-        <div className="mb-6">
+        {/* 결과 개수 + 모임 만들기 버튼 */}
+        <div className="mb-6 flex items-center justify-between">
           <p className="text-gray-600">
             {loading ? '로딩 중...' : `${filteredCommunities.length}개의 모임 (최신순)`}
           </p>
+          <button
+            onClick={() => {
+              if (!user) {
+                setLoginModalMessage('모임을 만드시려면 로그인해주세요');
+                setShowLoginModal(true);
+              } else {
+                onCreateClick?.();
+              }
+            }}
+            className="flex items-center gap-2 bg-[#00A651] text-white font-bold px-6 py-3 rounded-full hover:bg-[#008E41] transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <Plus className="w-5 h-5" />
+            <span>모임 만들기</span>
+          </button>
         </div>
 
         {/* 모임 카드 그리드 */}
@@ -374,7 +391,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                 로그인이 필요합니다
               </h3>
               <p className="text-gray-600 mb-6">
-                즐겨찾기 기능을 사용하려면 로그인해주세요
+                {loginModalMessage || '로그인해주세요'}
               </p>
               <button
                 onClick={() => {

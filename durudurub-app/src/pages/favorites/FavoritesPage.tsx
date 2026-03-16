@@ -79,32 +79,24 @@ export function FavoritesPage({
   const handleRemoveFavorite = async (communityNo: number) => {
     if (!accessToken) return;
 
-    // 로컬에서 즐겨찾기 목록에서 제거
-    setFavorites((prev) => prev.filter((c) => c.no !== communityNo));
-    
-    // 백엔드 연결 시 사용할 코드 (주석 처리)
-    
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities/${communityNo}/favorite`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await fetch(`/api/likes/club/${communityNo}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success && !data.isFavorite) {
+        // liked가 false이면 즐겨찾기 해제된 것 → 목록에서 제거
+        if (!data.liked) {
           setFavorites((prev) => prev.filter((c) => c.no !== communityNo));
         }
       }
     } catch (error) {
       console.error('즐겨찾기 제거 중 오류:', error);
     }
-    
   };
 
   return (

@@ -1,6 +1,6 @@
 import { MapPin, Calendar, Clock, Users, Star, ArrowLeft, MessageSquare, Lock, ThumbsUp, CheckCircle, Clock as ClockIcon, X, Image as ImageIcon, Send, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-// Supabase 제거 - 백엔드 API 사용
+import api from '@/api/axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -497,19 +497,34 @@ export function CommunityDetailPage({
     }
   };
 
-  const handleEditInfoSave = (data: {
+  const handleEditInfoSave = async (data: {
     title: string;
     description: string;
     location: string;
     maxParticipants: number;
     schedules: MeetingSchedule[];
   }) => {
-    setEditedTitle(data.title);
-    setEditedDescription(data.description);
-    setEditedLocation(data.location);
-    setEditedMaxParticipants(data.maxParticipants);
-    setEditedSchedules(data.schedules);
-    alert('모임 정보가 수정되었습니다!');
+    try {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('location', data.location);
+      formData.append('maxMembers', String(data.maxParticipants));
+
+      await api.put(`/api/clubs/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setEditedTitle(data.title);
+      setEditedDescription(data.description);
+      setEditedLocation(data.location);
+      setEditedMaxParticipants(data.maxParticipants);
+      setEditedSchedules(data.schedules);
+      toast.success('모임 정보가 수정되었습니다!');
+    } catch (error) {
+      console.error('모임 수정 실패:', error);
+      toast.error('모임 수정에 실패했습니다.');
+    }
   };
 
   const formatScheduleDisplay = (schedule: MeetingSchedule) => {

@@ -2,6 +2,7 @@ package com.aloha.durudurub.controller;
 
 import com.aloha.durudurub.dto.Club;
 import com.aloha.durudurub.dto.ClubMember;
+import com.aloha.durudurub.dto.HostClubresponse;
 import com.aloha.durudurub.dto.Subscription;
 import com.aloha.durudurub.dto.User;
 import com.aloha.durudurub.service.ClubService;
@@ -26,10 +27,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 
 
 @Slf4j
@@ -224,7 +227,7 @@ public class MypageApiController {
 
 
     // 가입 중인 모임 (조각)
-    @GetMapping("/club/fragment/approvedClub")
+    @GetMapping("/club/approvedClub")
     @ResponseBody
     public ResponseEntity<List<Club>> approvedClub(
         Principal principal
@@ -236,7 +239,7 @@ public class MypageApiController {
         return ResponseEntity.ok(approvedClub);
     }
     // 가입 중인 모임 - 탈퇴
-    @DeleteMapping("/api/club/{clubNo}")
+    @DeleteMapping("/club/{clubNo}")
     @ResponseBody
     public int deleteApprovedClub (
         @PathVariable("clubNo") int clubNo,
@@ -249,42 +252,31 @@ public class MypageApiController {
     }
 
     // 리더인 모임 (조각)
-    @GetMapping("/club/fragment/hostClub")
+    @GetMapping("/club/hostClub")
     @ResponseBody
-    public ResponseEntity<List<Club>> hostClub(
+    public ResponseEntity<List<HostClubresponse>> hostClub(
         Principal principal
-    ) throws Exception{
+    ) {
         User host = userService.selectByUserId(principal.getName());
         int hostNo = host.getNo();
-        List<Club> hostClub = clubService.listByHost(hostNo);
-        log.info("*******hostClub: {}", hostClub);
-        return ResponseEntity.ok(hostClub);
-    }
 
-    // 승인 대기 목록 (json)
-    @GetMapping("/api/club/hostClub/{clubNo}/pending")
-    @ResponseBody
-    public List<ClubMember> pendingMember(
-        @PathVariable("clubNo") int clubNo
-    ) throws Exception {
-        List<ClubMember> pendingList = clubService.listPendingMembers(clubNo);
-        log.info("★★ pendingList : " + pendingList);
-        
-        return pendingList;
-    }
-    // 승인된 멤버 목록
-    @GetMapping("/api/club/hostClub/{clubNo}/approved")
-    @ResponseBody
-    public List<ClubMember> approvedMember(
-        @PathVariable("clubNo") int clubNo
-    ) {
-        List<ClubMember> approvedList = clubService.listApproveMembers(clubNo);
-        log.info("★★ approvedList : " + approvedList);
+        List<Club> clubs = clubService.listByHost(hostNo);
 
-        return approvedList;
+        List<HostClubresponse> result = new ArrayList<>();
+
+        for (Club  club : clubs) {
+            HostClubresponse hostClub = new HostClubresponse();
+
+            hostClub.setClub(club);
+            hostClub.setPendingMembers(clubService.listPendingMembers(club.getNo()));
+            hostClub.setApprovedMembers(clubService.listApproveMembers(club.getNo()));
+
+            result.add(hostClub);
+        }
+        return ResponseEntity.ok(result);
     }
     // 모임 삭제 - 리더
-    @DeleteMapping("/api/club/hostClub/{clubNo}")
+    @DeleteMapping("/club/hostClub/{clubNo}")
     @ResponseBody
     public ResponseEntity<?> deleteClub (
         @PathVariable("clubNo") int clubNo
@@ -297,7 +289,7 @@ public class MypageApiController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("*****삭제 실패");
     }
     // 모임 승인 - 리더
-    @PutMapping("/api/club/hostClub/{clubNo}/members/{userNo}/approved")
+    @PutMapping("/club/hostClub/{clubNo}/members/{userNo}/approved")
     @ResponseBody
     public ResponseEntity<?> approved (
         @PathVariable("clubNo") int clubNo, 
@@ -311,7 +303,7 @@ public class MypageApiController {
         return ResponseEntity.badRequest().body("*****승인 실패!");
     }
     // 모임 거부 - 리더
-    @DeleteMapping("/api/club/hostClub/{clubNo}/members/{userNo}/reject")
+    @DeleteMapping("/club/hostClub/{clubNo}/members/{userNo}/reject")
     @ResponseBody
     public ResponseEntity<?> rejectMember(
             @PathVariable("clubNo") int clubNo,
@@ -325,7 +317,7 @@ public class MypageApiController {
         return ResponseEntity.badRequest().body("******거부 실패");
     }
     // 모임 추방 - 리더
-    @DeleteMapping("/api/club/hostClub/{clubNo}/members/{userNo}/remove")
+    @DeleteMapping("/club/hostClub/{clubNo}/members/{userNo}/remove")
     @ResponseBody
     public ResponseEntity<?> removeMember(
             @PathVariable("clubNo")  int clubNo,
@@ -342,7 +334,7 @@ public class MypageApiController {
 
 
     // 신청 중인 모임 (조각)
-    @GetMapping("/club/fragment/pendingClub")
+    @GetMapping("/club/pendingClub")
     @ResponseBody
     public ResponseEntity<List<Club>> pendingClub(Principal principal) throws Exception {
 
@@ -350,6 +342,7 @@ public class MypageApiController {
         int userNo = user.getNo();
 
         List<Club> pendingClub = clubService.myClubList(userNo, "PENDING");
+        System.out.println(pendingClub);
 
         return ResponseEntity.ok(pendingClub);
     }

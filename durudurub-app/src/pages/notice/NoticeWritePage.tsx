@@ -1,7 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
-import { Navbar } from '@/app/components/Navbar';
+import { projectId, publicAnonKey } from '../../../utils/supabase/info';
+import { Navbar } from '@/components/header/Navbar';
 
 interface NoticeWritePageProps {
   onBack: () => void;
