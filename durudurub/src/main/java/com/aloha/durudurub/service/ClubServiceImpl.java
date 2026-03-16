@@ -39,6 +39,11 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
+    public List<Club> listByCategoryAndSubCategory(int categoryNo, int subCategoryNo) {
+        return clubMapper.listByCategoryAndSubCategory(categoryNo, subCategoryNo);
+    }
+
+    @Override
     public List<Club> listRecent(int limit) {
         return clubMapper.listRecent(limit);
     }

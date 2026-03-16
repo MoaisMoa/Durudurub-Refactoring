@@ -83,6 +83,22 @@
         ORDER BY c.created_at DESC
     </select>
 
+    <!-- 소분류별 모임 목록 -->
+    <select id="listByCategoryAndSubCategory" resultMap="clubResultMap">
+        SELECT c.*,
+               (SELECT COUNT(*) FROM club_members cm WHERE cm.club_no = c.no AND cm.status = 'APPROVED') AS current_members,
+               u.no AS host_user_no, u.username AS host_username, u.profile_img AS host_profile_img,
+               cat.no AS cat_no, cat.name AS cat_name, cat.icon AS cat_icon,
+               sub.no AS sub_cat_no, sub.name AS sub_cat_name
+        FROM clubs c
+        JOIN users u ON c.host_no = u.no
+        JOIN categories cat ON c.category_no = cat.no
+        LEFT JOIN sub_categories sub ON c.sub_category_no = sub.no
+        WHERE c.category_no = #{categoryNo}
+          AND c.sub_category_no = #{subCategoryNo}
+        ORDER BY c.created_at DESC
+    </select>
+
     <!-- 모임장별 모임 목록 -->
     <select id="listByHost" resultMap="clubResultMap">
         SELECT c.*,

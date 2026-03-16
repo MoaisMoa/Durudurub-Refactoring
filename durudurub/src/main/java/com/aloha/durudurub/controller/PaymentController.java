@@ -303,7 +303,7 @@ public class PaymentController {
 		try {
 			paymentService.createOrder(user.getNo(), orderId, orderName, amount);
 		} catch (Exception e) {
-			log.error("❌ createOrder 실패 - userNo={}, orderId={}, amount={}", user.getNo(), orderId, amount, e);
+			log.error("createOrder 실패 - userNo={}, orderId={}, amount={}", user.getNo(), orderId, amount, e);
 			Map<String, Object> error = new HashMap<>();
 			error.put("code", "ORDER_CREATION_FAILED");
 			error.put("message", e.getMessage());

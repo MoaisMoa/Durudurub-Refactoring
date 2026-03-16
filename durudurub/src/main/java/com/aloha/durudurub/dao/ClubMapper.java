@@ -19,6 +19,8 @@ public interface ClubMapper {
 
     List<Club> listBySubCategory(@Param("subCategoryNo") int subCategoryNo);
 
+    List<Club> listByCategoryAndSubCategory(@Param("categoryNo") int categoryNo, @Param("subCategoryNo") int subCategoryNo);
+
     List<Club> listByHost(@Param("hostNo") int hostNo);
 
     List<Club> listRecent(@Param("limit") int limit);

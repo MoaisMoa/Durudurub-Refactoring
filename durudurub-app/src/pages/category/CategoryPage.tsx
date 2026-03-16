@@ -1,7 +1,8 @@
 import { ArrowLeft, Heart, MapPin, Calendar, Users, X, Lock, Plus, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { BottomNavigation } from '@/components/footer/BottomNavigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import api from '@/api/axios';
 
 interface CategoryPageProps {
   category: string;
@@ -25,343 +26,230 @@ interface Meeting {
   participants: number;
   maxParticipants: number;
   liked: boolean;
-  subcategory?: string;
+  subCategoryNo?: number;
 }
 
-// 소분류 카테고리 정의
-const subcategories: { [key: string]: string[] } = {
-  '자기계발': ['전체', '독서', '스피치', '면접', '회화', '기타'],
-  '스포츠': ['전체', '러닝', '테니스', '풋살', '축구', '기타'],
-  '푸드': ['전체', '맛집', '빵투어', '베이킹', '한식', '기타'],
-  '게임': ['전체', '보드게임', '인터넷게임', '카드게임', '기타'],
-  '동네친구': ['전체', '술 친구', '액티브 놀이', '기타'],
-  '여행': ['전체', '국내여행', '해외여행', '당일치기', '패키지여행', '기타'],
-  '예술': ['전체', '미술', '음악', '연극', '뮤지컬', '기타'],
-  '반려동물': ['전체', '간 나눔', '산책', '애견카페', '기타'],
+interface ApiCategory {
+  no: number;
+  name: string;
+}
+
+interface ApiSubCategory {
+  no: number;
+  name: string;
+}
+
+interface ApiClub {
+  no: number;
+  title?: string;
+  description?: string;
+  location?: string;
+  thumbnailImg?: string;
+  currentMembers?: number;
+  maxMembers?: number;
+  liked?: boolean;
+  hostName?: string;
+  hostUserId?: string;
+  clubDate?: string;
+  createdAt?: string;
+  subCategoryNo?: number;
+  subCategoryName?: string;
+}
+
+const extractArray = <T,>(payload: unknown, candidateKeys: string[]): T[] => {
+  if (Array.isArray(payload)) {
+    return payload as T[];
+  }
+
+  if (payload && typeof payload === 'object') {
+    const record = payload as Record<string, unknown>;
+
+    for (const key of candidateKeys) {
+      const value = record[key];
+      if (Array.isArray(value)) {
+        return value as T[];
+      }
+    }
+  }
+
+  return [];
 };
 
-const categoryMeetings: { [key: string]: Meeting[] } = {
-  '자기계발': [
-    {
-      id: 1,
-      title: '독서 모임 - 매주 한 권 완독하기',
-      image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570',
-      host: '책벌레',
-      location: '강남구',
-      date: '매주 일요일 14:00',
-      participants: 12,
-      maxParticipants: 15,
-      liked: false,
-      subcategory: '독서',
-    },
-    {
-      id: 2,
-      title: '아침 영어 스터디 - 토익 900점 목표',
-      image: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d',
-      host: '영어마스터',
-      location: '서초구',
-      date: '평일 오전 7:00',
-      participants: 8,
-      maxParticipants: 10,
-      liked: false,
-      subcategory: '회화',
-    },
-    {
-      id: 3,
-      title: '재테크 스터디 - 주식 투자 기초',
-      image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e',
-      host: '재테크왕',
-      location: '송파구',
-      date: '매주 화요일 19:00',
-      participants: 18,
-      maxParticipants: 20,
-      liked: true,
-      subcategory: '기타',
-    },
-  ],
-  '스포츠': [
-    {
-      id: 4,
-      title: '주말 축구 모임 - 즐겁게 뛰어요',
-      image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
-      host: '축구왕',
-      location: '마포구',
-      date: '매주 토요일 10:00',
-      participants: 20,
-      maxParticipants: 22,
-      liked: false,
-      subcategory: '축구',
-    },
-    {
-      id: 5,
-      title: '테니스 동호회 - 초보 환영',
-      image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6',
-      host: '테니스조코비치',
-      location: '강남구',
-      date: '매주 수요일 18:00',
-      participants: 14,
-      maxParticipants: 16,
-      liked: true,
-      subcategory: '테니스',
-    },
-    {
-      id: 6,
-      title: '러닝 크루 - 한강 야간 런닝',
-      image: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5',
-      host: '달리기왕',
-      location: '여의도',
-      date: '매주 목요일 20:00',
-      participants: 25,
-      maxParticipants: 30,
-      liked: false,
-      subcategory: '러닝',
-    },
-  ],
-  '푸드': [
-    {
-      id: 7,
-      title: '홈베이킹 클래스 - 케이크 만들기',
-      image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d',
-      host: '베이킹마스터',
-      location: '용산구',
-      date: '매주 토요일 15:00',
-      participants: 10,
-      maxParticipants: 12,
-      liked: false,
-      subcategory: '베이킹',
-    },
-    {
-      id: 8,
-      title: '맛집 투어 - 이태원 세계요리',
-      image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1',
-      host: '맛집헌터',
-      location: '이태원',
-      date: '매주 일요일 18:00',
-      participants: 16,
-      maxParticipants: 20,
-      liked: true,
-      subcategory: '맛집',
-    },
-    {
-      id: 9,
-      title: '와인 시음 모임 - 와인의 모든 것',
-      image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
-      host: '소믈리에',
-      location: '강남구',
-      date: '격주 금요일 19:00',
-      participants: 8,
-      maxParticipants: 10,
-      liked: false,
-      subcategory: '기타',
-    },
-  ],
-  '게임': [
-    {
-      id: 10,
-      title: '보드게임 카페 정모 - 다양한 게임',
-      image: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09',
-      host: '보드게임매니아',
-      location: '홍대',
-      date: '매주 토요일 14:00',
-      participants: 15,
-      maxParticipants: 20,
-      liked: false,
-      subcategory: '보드게임',
-    },
-    {
-      id: 11,
-      title: 'PC방 리그오브레전드 게임단',
-      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e',
-      host: '게이머프로',
-      location: '강남구',
-      date: '평일 저녁 21:00',
-      participants: 10,
-      maxParticipants: 10,
-      liked: true,
-      subcategory: '인터넷게임',
-    },
-    {
-      id: 12,
-      title: '포켓몬 카드 수집 & 배틀',
-      image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176',
-      host: '포켓몬마스터',
-      location: '신촌',
-      date: '매주 일요일 13:00',
-      participants: 12,
-      maxParticipants: 15,
-      liked: false,
-      subcategory: '카드게임',
-    },
-  ],
-  '동네친구': [
-    {
-      id: 13,
-      title: '성수동 동네 친구 - 주말 산책',
-      image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac',
-      host: '성수동주민',
-      location: '성수동',
-      date: '매주 일요일 11:00',
-      participants: 22,
-      maxParticipants: 25,
-      liked: false,
-      subcategory: '액티브 놀이',
-    },
-    {
-      id: 14,
-      title: '합정 카페 투어 - 숨은 카페 찾기',
-      image: 'https://images.unsplash.com/photo-1511920170033-f8396924c348',
-      host: '카페탐험가',
-      location: '합정',
-      date: '매주 토요일 15:00',
-      participants: 8,
-      maxParticipants: 12,
-      liked: true,
-      subcategory: '기타',
-    },
-    {
-      id: 15,
-      title: '이태원 친목 모임 - 30대 직장인',
-      image: 'https://images.unsplash.com/photo-1543807535-eceef0bc6599',
-      host: '친목도우미',
-      location: '이태원',
-      date: '격주 금요일 19:00',
-      participants: 18,
-      maxParticipants: 20,
-      liked: false,
-      subcategory: '술 친구',
-    },
-  ],
-  '여행': [
-    {
-      id: 16,
-      title: '제주도 한달살기 - 3월 함께해요',
-      image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19',
-      host: '여행가',
-      location: '제주도',
-      date: '3월 1일 - 3월 31일',
-      participants: 6,
-      maxParticipants: 8,
-      liked: false,
-      subcategory: '국내여행',
-    },
-    {
-      id: 17,
-      title: '유럽 배낭여행 - 2주 일정',
-      image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828',
-      host: '세계여행러',
-      location: '유럽',
-      date: '5월 10일 - 5월 24일',
-      participants: 4,
-      maxParticipants: 6,
-      liked: true,
-      subcategory: '해외여행',
-    },
-    {
-      id: 18,
-      title: '전국 맛집 투어 - 주말 여행',
-      image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800',
-      host: '맛집탐험',
-      location: '전국',
-      date: '매주 토-일',
-      participants: 12,
-      maxParticipants: 15,
-      liked: false,
-      subcategory: '당일치기',
-    },
-  ],
-  '예술': [
-    {
-      id: 19,
-      title: '수채화 클래스 - 풍경화 그리기',
-      image: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b',
-      host: '화가',
-      location: '종로구',
-      date: '매주 수요일 19:00',
-      participants: 10,
-      maxParticipants: 12,
-      liked: false,
-      subcategory: '미술',
-    },
-    {
-      id: 20,
-      title: '사진 촬영 모임 - 출사 가요',
-      image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d',
-      host: '사진작가',
-      location: '서울 근교',
-      date: '매주 일요일 09:00',
-      participants: 15,
-      maxParticipants: 20,
-      liked: true,
-      subcategory: '사진',
-    },
-    {
-      id: 21,
-      title: '도예 공방 - 나만의 그릇 만들기',
-      image: 'https://images.unsplash.com/photo-1493106641515-6b5631de4bb9',
-      host: '도예가',
-      location: '이태원',
-      date: '매주 토요일 14:00',
-      participants: 6,
-      maxParticipants: 8,
-      liked: false,
-      subcategory: '기타',
-    },
-  ],
-  '반려동물': [
-    {
-      id: 22,
-      title: '강아지 산책 모임 - 한강공원',
-      image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b',
-      host: '멍멍이집사',
-      location: '여의도 한강공원',
-      date: '매주 토요일 10:00',
-      participants: 20,
-      maxParticipants: 25,
-      liked: false,
-      subcategory: '산책',
-    },
-    {
-      id: 23,
-      title: '고양이 집사 모임 - 정보 공유',
-      image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba',
-      host: '냥집사',
-      location: '온라인/오프라인',
-      date: '매주 일요일 15:00',
-      participants: 18,
-      maxParticipants: 20,
-      liked: true,
-      subcategory: '기타',
-    },
-    {
-      id: 24,
-      title: '반려동물 사진 촬영 - 추억 남기기',
-      image: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e',
-      host: '펫사진가',
-      location: '서울숲',
-      date: '격주 토요일 11:00',
-      participants: 10,
-      maxParticipants: 12,
-      liked: false,
-      subcategory: '사진',
-    },
-  ],
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop';
+
+const normalizeImageUrl = (thumbnailImg?: string) => {
+  if (!thumbnailImg) {
+    return PLACEHOLDER_IMAGE;
+  }
+
+  if (thumbnailImg.startsWith('http://') || thumbnailImg.startsWith('https://')) {
+    return thumbnailImg;
+  }
+
+  if (thumbnailImg.startsWith('/')) {
+    return thumbnailImg;
+  }
+
+  return `/uploads/clubs/${thumbnailImg}`;
+};
+
+const formatMeetingDate = (value?: string) => {
+  if (!value) {
+    return '일정 미정';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingClick, onLoginClick, onCreateClick, onLogoClick, onMyPageClick }: CategoryPageProps) {
-  const meetings = categoryMeetings[category] || [];
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [apiSubcategories, setApiSubcategories] = useState<ApiSubCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [likedMeetings, setLikedMeetings] = useState<Set<number>>(new Set());
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('전체');
+  const [selectedSubcategoryNo, setSelectedSubcategoryNo] = useState<string>('all');
+  const [resolvedCategoryNo, setResolvedCategoryNo] = useState<number | null>(null);
 
   const isAdmin = user?.isAdmin === true;
-  const currentSubcategories = subcategories[category] || ['전체'];
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const resolveCategoryNo = async () => {
+      const numericCategoryNo = Number(category);
+      if (!Number.isNaN(numericCategoryNo) && numericCategoryNo > 0) {
+        return numericCategoryNo;
+      }
+
+      const categoriesRes = await api.get<ApiCategory[]>('/api/clubs/categories');
+      const matchedCategory = categoriesRes.data?.find((item) => item.name === category);
+      return matchedCategory?.no ?? null;
+    };
+
+    const fetchCategoryBaseData = async () => {
+      setLoadError(null);
+      setSelectedSubcategoryNo('all');
+      setMeetings([]);
+
+      try {
+        const categoryNo = await resolveCategoryNo();
+
+        if (!categoryNo) {
+          if (!isCancelled) {
+            setResolvedCategoryNo(null);
+            setApiSubcategories([]);
+            setLoadError('카테고리를 찾을 수 없습니다.');
+          }
+          return;
+        }
+
+        let subCategoriesData: ApiSubCategory[] = [];
+
+        const subCategoriesRes = await api.get<ApiSubCategory[]>(`/api/clubs/subcategories/${categoryNo}`);
+        subCategoriesData = extractArray<ApiSubCategory>(subCategoriesRes.data, ['subCategories', 'categories', 'data', 'list', 'items']);
+
+        if (!isCancelled) {
+          setResolvedCategoryNo(categoryNo);
+          setApiSubcategories(subCategoriesData);
+        }
+      } catch (error) {
+        console.error('카테고리 기본 데이터 조회 실패:', error);
+        if (!isCancelled) {
+          setResolvedCategoryNo(null);
+          setMeetings([]);
+          setApiSubcategories([]);
+          setLoadError('카테고리 정보를 불러오지 못했습니다.');
+        }
+      }
+    };
+
+    void fetchCategoryBaseData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [category]);
+
+  useEffect(() => {
+    if (!resolvedCategoryNo) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const fetchMeetings = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const params: Record<string, number> = {
+          category: resolvedCategoryNo,
+        };
+
+        if (selectedSubcategoryNo !== 'all') {
+          const subNo = Number(selectedSubcategoryNo);
+          if (!Number.isNaN(subNo) && subNo > 0) {
+            params.sub = subNo;
+          }
+        }
+
+        const clubsRes = await api.get('/api/clubs', { params });
+        const clubsData = extractArray<ApiClub>(clubsRes.data, ['clubs', 'data', 'list', 'items']);
+
+        const mappedMeetings: Meeting[] = clubsData.map((club) => ({
+          id: club.no,
+          title: club.title || '제목 없음',
+          image: normalizeImageUrl(club.thumbnailImg),
+          host: club.hostName || club.hostUserId || '모임장',
+          location: club.location || '장소 미정',
+          date: formatMeetingDate(club.clubDate || club.createdAt),
+          participants: club.currentMembers || 0,
+          maxParticipants: club.maxMembers || 0,
+          liked: Boolean(club.liked),
+          subCategoryNo: club.subCategoryNo,
+        }));
+
+        if (!isCancelled) {
+          setMeetings(mappedMeetings);
+        }
+      } catch (error) {
+        console.error('모임 목록 조회 실패:', error);
+        if (!isCancelled) {
+          setMeetings([]);
+          setLoadError('모임 목록을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void fetchMeetings();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [resolvedCategoryNo, selectedSubcategoryNo]);
 
   // 선택된 소분류에 따라 모임 필터링
-  const filteredMeetings = selectedSubcategory === '전체' 
+  const filteredMeetings = selectedSubcategoryNo === 'all' 
     ? meetings 
-    : meetings.filter(meeting => meeting.subcategory === selectedSubcategory);
+    : meetings.filter(meeting => String(meeting.subCategoryNo) === selectedSubcategoryNo);
 
   const handleLikeClick = (e: React.MouseEvent, meetingId: number) => {
     e.stopPropagation();
@@ -445,8 +333,8 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
           {/* 모바일: 드롭다운 */}
           <div className="sm:hidden">
             <select
-              value={selectedSubcategory}
-              onChange={(e) => setSelectedSubcategory(e.target.value)}
+              value={selectedSubcategoryNo}
+              onChange={(e) => setSelectedSubcategoryNo(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-700 font-medium focus:outline-none focus:border-[#00A651] transition-colors appearance-none cursor-pointer"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23666' d='M4 6l4 4 4-4'/%3E%3C/svg%3E")`,
@@ -455,9 +343,10 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
                 paddingRight: '40px'
               }}
             >
-              {currentSubcategories.map((subcategory) => (
-                <option key={subcategory} value={subcategory}>
-                  {subcategory}
+              <option value="all">전체</option>
+              {apiSubcategories.map((subcategory) => (
+                <option key={subcategory.no} value={String(subcategory.no)}>
+                  {subcategory.name}
                 </option>
               ))}
             </select>
@@ -466,23 +355,43 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
           {/* 데스크톱: 가로 스크롤 버튼 */}
           <div className="hidden sm:block overflow-x-auto">
             <div className="flex gap-3 pb-2">
-              {currentSubcategories.map((subcategory) => (
+              <button
+                key="all"
+                onClick={() => setSelectedSubcategoryNo('all')}
+                className={`px-5 py-2.5 rounded-full font-medium whitespace-nowrap transition-all duration-200 ${
+                  selectedSubcategoryNo === 'all'
+                    ? 'bg-[#00A651] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                전체
+              </button>
+              {apiSubcategories.map((subcategory) => (
                 <button
-                  key={subcategory}
-                  onClick={() => setSelectedSubcategory(subcategory)}
+                  key={subcategory.no}
+                  onClick={() => setSelectedSubcategoryNo(String(subcategory.no))}
                   className={`px-5 py-2.5 rounded-full font-medium whitespace-nowrap transition-all duration-200 ${
-                    selectedSubcategory === subcategory
+                    selectedSubcategoryNo === String(subcategory.no)
                       ? 'bg-[#00A651] text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {subcategory}
+                  {subcategory.name}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
+        {isLoading ? (
+          <div className="text-center py-20">
+            <p className="text-gray-500 text-lg">모임 목록을 불러오는 중입니다.</p>
+          </div>
+        ) : loadError ? (
+          <div className="text-center py-20">
+            <p className="text-red-500 text-lg">{loadError}</p>
+          </div>
+        ) : (
         <div className="space-y-4">
           {filteredMeetings.map((meeting) => {
             const isLiked = likedMeetings.has(meeting.id);
@@ -633,8 +542,9 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
             );
           })}
         </div>
+        )}
 
-        {filteredMeetings.length === 0 && (
+        {!isLoading && !loadError && filteredMeetings.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg">
               아직 등록된 모임이 없습니다.

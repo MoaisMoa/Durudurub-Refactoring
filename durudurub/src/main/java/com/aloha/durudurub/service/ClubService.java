@@ -21,6 +21,8 @@ public interface ClubService {
 
     List<Club> listBySubCategory(int subCategoryNo);
 
+    List<Club> listByCategoryAndSubCategory(int categoryNo, int subCategoryNo);
+
     List<Club> listRecent(int limit);
 
     List<Club> search(String keyword);
