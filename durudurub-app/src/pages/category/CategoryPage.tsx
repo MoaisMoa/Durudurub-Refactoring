@@ -1,6 +1,7 @@
-import { ArrowLeft, Heart, MapPin, Calendar, Users, X, Lock, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Calendar, Users, X, Lock, Plus, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { BottomNavigation } from '@/components/footer/BottomNavigation';
+import { Navbar } from '@/components/header/Navbar';
 import { useEffect, useState } from 'react';
 import api from '@/api/axios';
 
@@ -373,6 +374,14 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
 
   return (
     <div className="min-h-screen bg-white">
+      <Navbar
+        onSignupClick={onSignupClick}
+        onLoginClick={onLoginClick}
+        onLogoClick={onLogoClick}
+        onMyPageClick={onMyPageClick}
+        user={user}
+      />
+
       {/* 헤더 */}
       <div className="bg-[#FBF7F0] py-12 relative">
         {/* 모바일 뒤로가기 버튼 */}
@@ -500,11 +509,11 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
                         onClick={(e) => handleLikeClick(e, meeting.id)}
                         className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-200"
                       >
-                        <Heart
+                        <Star
                           className={`w-4 h-4 transition-all duration-300 ${
                             isLiked
-                              ? 'fill-red-500 text-red-500 scale-110'
-                              : 'text-gray-600 hover:text-red-400'
+                              ? 'fill-yellow-400 text-yellow-400 scale-110'
+                              : 'text-gray-500'
                           }`}
                         />
                       </button>
@@ -565,11 +574,11 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
                       onClick={(e) => handleLikeClick(e, meeting.id)}
                       className="absolute top-1 right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md"
                     >
-                      <Heart
+                      <Star
                         className={`w-4 h-4 ${
                           isLiked
-                            ? 'fill-red-500 text-red-500'
-                            : 'text-gray-400'
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-500'
                         }`}
                       />
                     </button>

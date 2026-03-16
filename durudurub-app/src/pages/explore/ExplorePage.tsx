@@ -36,6 +36,20 @@ const categories = [
   { id: '기타', name: '기타', icon: '🌟' }
 ];
 
+const DEFAULT_MEETING_IMAGE = '/uploads/profile/Durub_Default.png';
+
+const normalizeMeetingImageUrl = (thumbnailImg?: string) => {
+  if (!thumbnailImg || thumbnailImg.trim() === '') {
+    return DEFAULT_MEETING_IMAGE;
+  }
+
+  if (thumbnailImg.startsWith('http://') || thumbnailImg.startsWith('https://') || thumbnailImg.startsWith('/')) {
+    return thumbnailImg;
+  }
+
+  return `/uploads/clubs/${thumbnailImg}`;
+};
+
 export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onPaymentClick, onCreateClick, onSearchClick, user, accessToken, profileImage, onLogout, initialSearchQuery, initialCategory }: ExplorePageProps) {
   const [communities, setCommunities] = useState<any[]>([]);
   const [filteredCommunities, setFilteredCommunities] = useState<any[]>([]);
@@ -44,6 +58,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [brokenHostImages, setBrokenHostImages] = useState<Set<string>>(new Set());
+  const [brokenMeetingImages, setBrokenMeetingImages] = useState<Set<string>>(new Set());
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginModalMessage, setLoginModalMessage] = useState('');
   const [sortOrder, setSortOrder] = useState<'latest' | 'popular' | 'name'>('latest');
@@ -371,6 +386,9 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
               const hostInitial = hostNickname ? hostNickname.charAt(0) : '?';
               const hostProfileImg = (community.host?.profileImg || '').trim();
               const canShowHostProfileImg = hostProfileImg !== '' && !brokenHostImages.has(communityId);
+              const thumbnailSrc = brokenMeetingImages.has(communityId)
+                ? DEFAULT_MEETING_IMAGE
+                : normalizeMeetingImageUrl(community.thumbnailImg);
 
               return (
               <div
@@ -382,17 +400,18 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                 <div className="hidden md:block">
                   {/* 이미지 */}
                   <div className="relative h-48 bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/20 flex items-center justify-center">
-                    {community.thumbnailImg ? (
-                      <img
-                        src={community.thumbnailImg}
-                        alt={community.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-6xl">
-                        {categories.find(c => c.id === community.category?.name)?.icon || '🌟'}
-                      </div>
-                    )}
+                    <img
+                      src={thumbnailSrc}
+                      alt={community.title}
+                      className="w-full h-full object-contain"
+                      onError={() => {
+                        setBrokenMeetingImages((prev) => {
+                          const next = new Set(prev);
+                          next.add(communityId);
+                          return next;
+                        });
+                      }}
+                    />
                     
                     {/* 즐겨찾기 버튼 */}
                     <button
@@ -466,17 +485,18 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                 <div className="md:hidden flex gap-3 p-3">
                   {/* 왼쪽: 썸네일 */}
                   <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/20 flex items-center justify-center">
-                    {community.thumbnailImg ? (
-                      <img
-                        src={community.thumbnailImg}
-                        alt={community.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-3xl">
-                        {categories.find(c => c.id === community.category?.name)?.icon || '🌟'}
-                      </div>
-                    )}
+                    <img
+                      src={thumbnailSrc}
+                      alt={community.title}
+                      className="w-full h-full object-contain"
+                      onError={() => {
+                        setBrokenMeetingImages((prev) => {
+                          const next = new Set(prev);
+                          next.add(communityId);
+                          return next;
+                        });
+                      }}
+                    />
                     
                     {/* 즐겨찾기 버튼 */}
                     <button
