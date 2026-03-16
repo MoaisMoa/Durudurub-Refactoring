@@ -55,6 +55,56 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
     filterCommunities();
   }, [communities, selectedCategory, searchTerm]);
 
+  useEffect(() => {
+    if (!user || communities.length === 0) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const syncFavorites = async () => {
+      try {
+        const token = sessionStorage.getItem('accessToken');
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const likedEntries = await Promise.all(
+          communities.map(async (community) => {
+            try {
+              const res = await fetch(`/api/likes/club/${community.no}`, { headers });
+              if (!res.ok) {
+                return [String(community.no), Boolean(community.liked)] as const;
+              }
+
+              const data = await res.json();
+              return [String(community.no), Boolean(data.liked)] as const;
+            } catch {
+              return [String(community.no), Boolean(community.liked)] as const;
+            }
+          })
+        );
+
+        if (isCancelled) return;
+
+        const nextFavorites = new Set<string>();
+        likedEntries.forEach(([id, liked]) => {
+          if (liked) {
+            nextFavorites.add(id);
+          }
+        });
+        setFavorites(nextFavorites);
+      } catch (error) {
+        console.error('즐겨찾기 상태 동기화 실패 : ', error);
+      }
+    };
+
+    void syncFavorites();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, communities]);
+
   const loadCommunities = async () => {
     setLoading(true);
     try {
@@ -69,10 +119,6 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadFavorites = async () => {
-    // 보류 (계속 오류남)
   };
 
   // HTML 태그 제거 헬퍼
@@ -107,11 +153,31 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
       const token = sessionStorage.getItem('accessToken');
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      await fetch(`/api/likes/club/${communityId}`, { method: 'POST', headers });
-      const newFavs = new Set(favorites);
-      if (newFavs.has(communityId)) newFavs.delete(communityId);
-      else newFavs.add(communityId);
-      setFavorites(newFavs);
+      const res = await fetch(`/api/likes/club/${communityId}`, { method: 'POST', headers });
+      if (!res.ok) {
+        return;
+      }
+
+      const data = await res.json();
+      const nextLiked = Boolean(data.liked);
+
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        if (nextLiked) {
+          next.add(communityId);
+        } else {
+          next.delete(communityId);
+        }
+        return next;
+      });
+
+      setCommunities((prev) =>
+        prev.map((community) =>
+          String(community.no) === communityId
+            ? { ...community, liked: nextLiked }
+            : community
+        )
+      );
     } catch (e) {
       console.error('좋아요 반영 실패 : ', e);
     }

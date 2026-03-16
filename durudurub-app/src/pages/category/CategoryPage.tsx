@@ -117,7 +117,6 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
   const [apiSubcategories, setApiSubcategories] = useState<ApiSubCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [likedMeetings, setLikedMeetings] = useState<Set<number>>(new Set());
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
@@ -246,12 +245,77 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
     };
   }, [resolvedCategoryNo, selectedSubcategoryNo]);
 
+  useEffect(() => {
+    if (!user || meetings.length === 0) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const syncLikeStatuses = async () => {
+      try {
+        const likeStatusEntries = await Promise.all(
+          meetings.map(async (meeting) => {
+            try {
+              const token = sessionStorage.getItem('accessToken');
+              const headers: Record<string, string> = {};
+              if (token) {
+                headers.Authorization = `Bearer ${token}`;
+              }
+
+              const res = await fetch(`/api/likes/club/${meeting.id}`, {
+                headers,
+              });
+
+              if (!res.ok) {
+                return [meeting.id, meeting.liked] as const;
+              }
+
+              const data = await res.json();
+              return [meeting.id, Boolean(data.liked)] as const;
+            } catch {
+              return [meeting.id, meeting.liked] as const;
+            }
+          })
+        );
+
+        if (isCancelled) {
+          return;
+        }
+
+        const likedMap = new Map<number, boolean>(likeStatusEntries);
+        setMeetings((prev) => {
+          let hasChanged = false;
+
+          const next = prev.map((meeting) => {
+            const syncedLiked = likedMap.get(meeting.id) ?? meeting.liked;
+            if (syncedLiked !== meeting.liked) {
+              hasChanged = true;
+              return { ...meeting, liked: syncedLiked };
+            }
+            return meeting;
+          });
+
+          return hasChanged ? next : prev;
+        });
+      } catch (error) {
+        console.error('즐겨찾기 상태 동기화 실패:', error);
+      }
+    };
+
+    void syncLikeStatuses();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, meetings]);
+
   // 선택된 소분류에 따라 모임 필터링
   const filteredMeetings = selectedSubcategoryNo === 'all' 
     ? meetings 
     : meetings.filter(meeting => String(meeting.subCategoryNo) === selectedSubcategoryNo);
 
-  const handleLikeClick = (e: React.MouseEvent, meetingId: number) => {
+  const handleLikeClick = async (e: React.MouseEvent, meetingId: number) => {
     e.stopPropagation();
     
     // 비로그인 상태면 로그인 모달 표시
@@ -260,16 +324,35 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
       return;
     }
 
-    // 로그인 상태면 좋아요 토글
-    setLikedMeetings(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(meetingId)) {
-        newSet.delete(meetingId);
-      } else {
-        newSet.add(meetingId);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
-      return newSet;
-    });
+
+      const res = await fetch(`/api/likes/club/${meetingId}`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!res.ok) {
+        return;
+      }
+
+      const data = await res.json();
+      const nextLiked = Boolean(data.liked);
+
+      setMeetings((prev) =>
+        prev.map((meeting) =>
+          meeting.id === meetingId
+            ? { ...meeting, liked: nextLiked }
+            : meeting
+        )
+      );
+    } catch (error) {
+      console.error('즐겨찾기 처리 실패:', error);
+    }
   };
 
   const handleDeleteClick = (e: React.MouseEvent, meetingId: number) => {
@@ -394,7 +477,7 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
         ) : (
         <div className="space-y-4">
           {filteredMeetings.map((meeting) => {
-            const isLiked = likedMeetings.has(meeting.id);
+            const isLiked = meeting.liked;
             
             return (
               <div
