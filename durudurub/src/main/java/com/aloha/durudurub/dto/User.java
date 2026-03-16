@@ -25,4 +25,9 @@ public class User {
     private Date updatedAt;
 
     private List<Auth> authList;     // 권한 목록
+
+    // 소셜 로그인
+    private String provider;
+    private String providerId;
+
 }

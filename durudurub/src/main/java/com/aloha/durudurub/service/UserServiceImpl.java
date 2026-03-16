@@ -192,4 +192,9 @@ public class UserServiceImpl implements UserService {
     public List<AdminSubscription> userList() {
         return userMapper.userList();
     }
+
+    @Override
+    public User findByProviderAndProviderId(String provider, String providerId) {
+        return userMapper.findByProviderAndProviderId(provider, providerId);
+    }
 }

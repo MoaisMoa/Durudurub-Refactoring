@@ -2,6 +2,7 @@ package com.aloha.durudurub.service;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Param;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.aloha.durudurub.dto.AdminSubscription;
@@ -53,4 +54,8 @@ public interface UserService {
     User findLastestUser();
     // 사용자 리스트(구독 여부)
     List<AdminSubscription> userList();
+
+    // 소셜 로그인
+    User findByProviderAndProviderId (String provider, String providerId);
+
 }

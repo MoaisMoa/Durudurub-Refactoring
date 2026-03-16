@@ -1,4 +1,4 @@
--- Active: 1767840773547@@127.0.0.1@3306@durudurub
+-- Active: 1770210803187@@127.0.0.1@3306@durudurub
 -- =====================================================
 -- 두루두룹 - 소모임 플랫폼 (With ... Spring Security, JQuery Ajax, Java, Lombok, Thymeleaf, MySQL)
 -- =====================================================
@@ -61,7 +61,10 @@ CREATE TABLE `users` (
     UNIQUE KEY uk_user_username (`username`)
     -- UK 는 특별한 일 없으면 건들지 말아주세요 (특히 users 테이블)
 );
-
+-- 소셜 로그인 추가
+ALTER TABLE `users`
+ADD provider VARCHAR(20),
+ADD provider_id VARCHAR(100);
 
 -- 2. user_auth (회원 권한부여)
 

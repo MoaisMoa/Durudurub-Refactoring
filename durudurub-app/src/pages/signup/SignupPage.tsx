@@ -273,9 +273,8 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
               <button
                 type="button"
                 onClick={() => {
-                  // TODO: 카카오 로그인 연동
-                  alert('카카오 로그인 기능은 준비 중입니다.');
-                }}
+                    window.location.href = "http://localhost:8080/oauth2/authorization/kakao";
+                  }}
                 className="w-full bg-[#FEE500] text-[#000000] py-3.5 rounded-full font-medium hover:bg-[#FDD835] transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -288,8 +287,7 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
               <button
                 type="button"
                 onClick={() => {
-                  // TODO: 구글 로그인 연동
-                  alert('구글 로그인 기능은 준비 중입니다.');
+                  window.location.href = "http://localhost:8080/oauth2/authorization/google";
                 }}
                 className="w-full bg-white border-2 border-gray-300 text-gray-700 py-3.5 rounded-full font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
               >
@@ -306,9 +304,8 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
               <button
                 type="button"
                 onClick={() => {
-                  // TODO: 네이버 로그인 연동
-                  alert('네이버 로그인 기능은 준비 중입니다.');
-                }}
+                    window.location.href = "http://localhost:8080/oauth2/authorization/naver";
+                  }}
                 className="w-full bg-[#03C75A] text-white py-3.5 rounded-full font-medium hover:bg-[#02b351] transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">

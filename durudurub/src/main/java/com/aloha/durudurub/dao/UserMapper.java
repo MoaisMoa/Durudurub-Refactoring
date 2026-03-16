@@ -53,4 +53,8 @@ public interface UserMapper {
     // 차단 기록
     int countActiveBan(@Param("userNo") int userNo);
     int insertUserBan(UserBan userBan);
+
+    // 소셜 로그인
+    User findByProviderAndProviderId (@Param("provider") String provider, @Param("providerId") String providerId);
+
 }
