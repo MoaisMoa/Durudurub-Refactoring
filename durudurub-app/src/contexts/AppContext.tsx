@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 
 interface User {
   id: string;
@@ -12,9 +12,9 @@ interface AppContextType {
   user: User | null;
   accessToken: string | null;
   profileImage: string | null;
-  setUser: (user: User | null) => void;
-  setAccessToken: (token: string | null) => void;
-  setProfileImage: (image: string | null) => void;
+  setUser: Dispatch<SetStateAction<User | null>>;
+  setAccessToken: Dispatch<SetStateAction<string | null>>;
+  
   handleLogin: (userData: User, token: string) => void;
   handleLogout: () => void;
   handleProfileImageUpdate: (newImage: string | null) => void;
