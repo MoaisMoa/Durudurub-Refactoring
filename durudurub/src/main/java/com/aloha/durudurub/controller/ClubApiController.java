@@ -63,14 +63,18 @@ public class ClubApiController {
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(value = "category", required = false) Integer categoryNo,
             @RequestParam(value = "sub", required = false) Integer subCategoryNo,
+            @RequestParam(value = "sub_category_no", required = false) Integer subCategoryNoSnake,
             @RequestParam(value = "keyword", required = false) String keyword) {
 
         List<Club> clubs;
+        Integer resolvedSubCategoryNo = subCategoryNo != null ? subCategoryNo : subCategoryNoSnake;
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             clubs = clubService.search(keyword);
-        } else if (subCategoryNo != null) {
-            clubs = clubService.listBySubCategory(subCategoryNo);
+        } else if (categoryNo != null && resolvedSubCategoryNo != null) {
+            clubs = clubService.listByCategoryAndSubCategory(categoryNo, resolvedSubCategoryNo);
+        } else if (resolvedSubCategoryNo != null) {
+            clubs = clubService.listBySubCategory(resolvedSubCategoryNo);
         } else if (categoryNo != null) {
             clubs = clubService.listByCategory(categoryNo);
         } else {

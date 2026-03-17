@@ -149,7 +149,6 @@ interface DraggableSubCategoryProps {
     }),
     canDrag: !isDeleteMode && !isEditMode, // 모드가 활성화되면 드래그 비활성화
   });
-
   const [, drop] = useDrop({
     accept: ItemTypes.SUBCATEGORY,
     hover(item: { index: number; parentId: number }, monitor) {
@@ -677,8 +676,7 @@ export function AdminPage({
         setUsers(data || []);
       }
     } catch (error) {
-      // Mock 데이터 사용 (Supabase 연결 실패 시)
-      console.log('사용자 목록: Mock 데이터 사용 중');
+      console.error('사용자 목록 로드 실패:', error);
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,8 @@ interface CommunityCardProps {
   description: string;
   location: string;
   hostName: string;
+  hostNo?: number | string;
+  clubMembers?: Array<{ nickname?: string; username?: string; name?: string; user_no?: number | string }>; // user_no 추가
   participants?: {
     current: number;
     max: number;
@@ -27,6 +29,8 @@ export function CommunityCard({
   description,
   location,
   hostName,
+  hostNo,
+  clubMembers,
   participants,
   isLiked: initialIsLiked = false,
   onLikeToggle,
@@ -49,6 +53,23 @@ export function CommunityCard({
     setIsLiked(!isLiked);
     onLikeToggle?.();
   };
+
+  // 호스트 닉네임: clubMembers에서 user_no==hostNo인 멤버의 nickname/username/name/hostName 등 다양한 필드에서 최대한 찾아서 표시
+  let hostNickname = hostName;
+  if (hostNo && Array.isArray(clubMembers)) {
+    const hostMember = clubMembers.find(
+      (m) => String(m.user_no) === String(hostNo)
+    );
+    const nickname =
+      hostMember?.nickname ||
+      hostMember?.username ||
+      hostMember?.name ||
+      hostName ||
+      '';
+    if (nickname && nickname.trim() !== '') {
+      hostNickname = nickname;
+    }
+  }
 
   return (
     <div
@@ -83,12 +104,12 @@ export function CommunityCard({
             <p className="text-sm text-gray-500 mb-1">{location}</p>
             {/* 호스트 */}
             <p className="text-sm text-gray-600 mb-1">
-              호스트: <span className="font-medium text-[#00A651]">{hostName}</span>
+              호스트: <span className="font-medium text-[#00A651]">{hostNickname}</span>
             </p>
             {/* 참가 인원 */}
-            {participants && (
+            {(participants && typeof participants.max === 'number') && (
               <p className="text-sm text-gray-700">
-                <span className="font-semibold text-[#00A651]">{participants.current}</span>
+                <span className="font-semibold text-[#00A651]">{Array.isArray(clubMembers) ? clubMembers.length : participants.current}</span>
                 <span className="text-gray-500">/{participants.max}명</span>
               </p>
             )}

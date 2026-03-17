@@ -82,6 +82,7 @@ export function PaymentPage({
         },
         orderId,
         orderName,
+        // 여기 수정해야함!!!
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user.email,
