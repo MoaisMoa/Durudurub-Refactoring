@@ -54,7 +54,7 @@ interface UserData {
   userId: string;
   createdAt: string;
   admin: boolean;
-  isSubscribed?: boolean;
+  subStatus?: string;
   reportCountAtBan?: number; // 신고 횟수
 }
 
@@ -88,7 +88,7 @@ interface ReportData {
   updatedAt: string;
 }
 
-interface BannerData {
+export interface BannerData {
   no: number;
   title: string;
 
@@ -115,7 +115,8 @@ const ItemTypes = {
 };
 
 interface DraggableSubCategoryProps {
-  sub: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string };
+  // sub: { no: number; name: string; description: string; createdAt: string; communityCount: number; subCategoryList?: SubCategory[]; parentId?: number | null; icon?: string };
+  sub: SubCategory
   index: number;
   parentId: number;
   moveSubCategory: (parentId: number, dragIndex: number, hoverIndex: number) => void;
@@ -249,9 +250,19 @@ interface DraggableSubCategoryProps {
     </div>
   );
 }
+interface SubCategory {
+  no: number;
+  categoryNo: number;
+  name: string;
+  seq: number;
+  createdAt: string | null;
+  updatedAt?: string | null;
+  category?: any;
+}
+
 
 interface DraggableParentCategoryProps {
-  parent: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string };
+  parent: { no: number; name: string; description: string; createdAt: string; communityCount: number; subCategoryList?: SubCategory[]; parentId?: number | null; icon?: string };
   index: number;
   moveParentCategory: (dragIndex: number, hoverIndex: number) => void;
   onDelete: () => void;
@@ -404,7 +415,7 @@ function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, 
             color: '#00A651',
             border: '1px solid #bbf7d0',
           }}>
-            {parent.communityCount}개 모임
+            {parent.subCategoryList?.length ?? 0}개 모임
           </div>
           {onEdit && (
             <button
@@ -551,7 +562,7 @@ export function AdminPage({
   const [showBannerErrorModal, setShowBannerErrorModal] = useState(false);
   const [bannerErrorMessage, setBannerErrorMessage] = useState('');
 
-  const [categories, setCategories] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string }[]>([]);
+  const [categories, setCategories] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; subCategoryList?: SubCategory[]; parentId: number | null; icon?: string }[]>([]);
   useEffect(() => {
     loadCategories();
   }, [])
@@ -564,7 +575,9 @@ export function AdminPage({
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/admin/categories', { headers });
       const data = await res.json();
-      setCategories(data || [])
+      setCategories(
+        (data || []).sort((a, b) => a.no - b.no)
+      );
     } catch (error) {
       console.error('커뮤니티 조회 실패 : ', error);
     } finally {
@@ -573,7 +586,7 @@ export function AdminPage({
   }
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; subCategoryList?: SubCategory[]; parentId?: number | null; icon?: string } | null>(null);
   const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '', parentId: null as number | null, icon: '' });
   const [showCategoryDeleteModal, setShowCategoryDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
@@ -660,6 +673,16 @@ export function AdminPage({
     }
   }
 
+  useEffect(() => {
+  console.log('탭:', activeTab);
+  console.log('관리자 여부:', isAdmin);
+
+  if (isAdmin && activeTab === 'users') {
+    console.log('🔥 loadUsers 실행됨');
+    loadUsers();
+  }
+}, [activeTab, isAdmin]);
+
   const loadUsers = async () => {
     setLoading(true);
     try {
@@ -675,8 +698,11 @@ export function AdminPage({
 
       if (response.ok) {
         const data = await response.json();
+        console.log('사용자 >>>> ', data)
         setUsers(data || []);
       }
+
+
     } catch (error) {
       console.error('사용자 목록 로드 실패:', error);
     } finally {
@@ -944,8 +970,113 @@ export function AdminPage({
     }  
   };
 
-  const savedCategory = async () => {
+//   const savedCategory = async () => {
+//   if (!categoryFormData.name.trim()) return;
+
+//   const isDuplicate = categories.some(
+//     c => c.name === categoryFormData.name && c.no !== selectedCategory?.no
+//   );
+
+//   if (isDuplicate) {
+//     setShowToast(true);
+//     setToastMessage('이미 존재하는 카테고리 이름입니다.');
+
+//     setTimeout(() => setShowToast(false), 2000); 
+
+//     return;
+//   }
+
+//   const token = sessionStorage.getItem('accessToken');
+
+//   try {
+//     let url = '';
+//     let method = '';
+//     let body: BodyInit;
+//     let headers: Record<string, string> = {
+//       Authorization: `Bearer ${token}`,
+//     };
+
+//     if (categoryFormData.parentId && !selectedCategory) {
+//       url = `/api/admin/categories/${categoryFormData.parentId}/subs`;
+//       method = 'POST';
+
+//       headers['Content-Type'] = 'application/json';
+
+//       body = JSON.stringify({
+//         name: categoryFormData.name,
+//         description: categoryFormData.description,
+//       });
+//     }
+//     else if (selectedCategory && !selectedCategory.parentId) {
+//       url = `/api/admin/categories/${selectedCategory.no}/update`;
+//       method = 'PUT';
+
+//       const formData = new FormData();
+//       formData.append("name", categoryFormData.name);
+//       formData.append("description", categoryFormData.description);
+
+//       if (iconFile) {
+//         formData.append("iconFile", iconFile);
+//       }
+
+//       body = formData;
+    
+//     } else {
+//       url = `/api/admin/categories/create`;
+//       method = 'POST';
+
+//       const formData = new FormData();
+//       formData.append("name", categoryFormData.name);
+//       formData.append("description", categoryFormData.description);
+
+//       if (iconFile) {
+//         formData.append("iconFile", iconFile);
+//       }
+
+//       body = formData;
+//     }
+
+//     const response = await fetch(url, {
+//       method,
+//       headers,
+//       body,
+//     });
+
+//     if (!response.ok) {
+//       console.error('savedCategory Fail:', await response.text());
+//       return;
+//     }
+    
+//     const data = await response.json();
+
+//     setToastMessage(
+//       selectedCategory ? '카테고리 수정 완료' : '카테고리 추가 완료'
+//     );
+//     setShowToast(true); 
+//     setTimeout(() => setShowToast(false), 2000); 
+
+//   } catch (error) {
+//     console.error("카테고리 추가/수정 실패......", error);
+//   }
+  
+//   loadCategories();
+//   setShowCategoryModal(false);
+// };
+
+const savedCategory = async () => {
   if (!categoryFormData.name.trim()) return;
+
+  const isDuplicate = categories.some(
+    c => c.name === categoryFormData.name && c.no !== selectedCategory?.no
+  );
+
+  if (isDuplicate) {
+    setToastMessage('이미 존재하는 카테고리 이름입니다.');
+    setShowToast(false);
+    setTimeout(() => setShowToast(true), 0);
+    setTimeout(() => setShowToast(false), 2000);
+    return;
+  }
 
   const token = sessionStorage.getItem('accessToken');
 
@@ -957,44 +1088,66 @@ export function AdminPage({
       Authorization: `Bearer ${token}`,
     };
 
-    if (categoryFormData.parentId && !selectedCategory) {
-      url = `/api/admin/categories/${categoryFormData.parentId}/subs`;
-      method = 'POST';
+    if (selectedCategory) {
 
-      headers['Content-Type'] = 'application/json';
+      if (selectedCategory.parentId) {
+        url = `/api/admin/categories/subs/${selectedCategory.no}`;
+        method = 'PUT';
 
-      body = JSON.stringify({
-        name: categoryFormData.name,
-        description: categoryFormData.description,
-      });
-    }
-    else if (selectedCategory && !selectedCategory.parentId) {
-      url = `/api/admin/categories/${selectedCategory.no}/update`;
-      method = 'PUT';
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify({
+          name: categoryFormData.name,
+          description: categoryFormData.description,
+        });
 
-      const formData = new FormData();
-      formData.append("name", categoryFormData.name);
-      formData.append("description", categoryFormData.description);
+      } 
+      else {
+        url = `/api/admin/categories/${selectedCategory.no}/update`;
+        method = 'PUT';
 
-      if (iconFile) {
-        formData.append("iconFile", iconFile);
+        const formData = new FormData();
+        formData.append("name", categoryFormData.name);
+        formData.append("description", categoryFormData.description);
+
+        if (iconFile) {
+          formData.append("iconFile", iconFile);
+        }
+
+        body = formData;
       }
 
-      body = formData;
+    } 
     
-    } else {
-      url = `/api/admin/categories/create`;
-      method = 'POST';
+    else {
+      if (categoryFormData.parentId) {
+        url = `/api/admin/categories/${categoryFormData.parentId}/subs`;
+        method = 'POST';
 
-      const formData = new FormData();
-      formData.append("name", categoryFormData.name);
-      formData.append("description", categoryFormData.description);
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify({
+          name: categoryFormData.name,
+          description: categoryFormData.description,
+        });
 
-      if (iconFile) {
-        formData.append("iconFile", iconFile);
+      } 
+      else {
+        url = `/api/admin/categories/create`;
+        method = 'POST';
+
+        const formData = new FormData();
+        formData.append("name", categoryFormData.name);
+        formData.append("description", categoryFormData.description);
+
+        if (iconFile) {
+          formData.append("iconFile", iconFile);
+        }
+
+        body = formData;
       }
+    }
 
-      body = formData;
+    if (body instanceof FormData) {
+      delete headers['Content-Type'];
     }
 
     const response = await fetch(url, {
@@ -1005,34 +1158,84 @@ export function AdminPage({
 
     if (!response.ok) {
       console.error('savedCategory Fail:', await response.text());
+      setToastMessage('카테고리 저장 실패');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
       return;
     }
-
-     // ❗ 이거 중요
-    await loadCategories();  // ← 무조건 재조회
-    
-    const data = await response.json();
-
-    setCategories(prev => {
-      if (selectedCategory) {
-        return prev.map(c =>
-          c.no === selectedCategory.no ? data : c
-        );
-      }
-      return [...prev, data];
-    });
 
     setToastMessage(
       selectedCategory ? '카테고리 수정 완료' : '카테고리 추가 완료'
     );
 
-  } catch (error) {
-    console.error("카테고리 추가/수정 실패......", error);
-  }
+    setShowToast(false);
+    setTimeout(() => setShowToast(true), 0);
+    setTimeout(() => setShowToast(false), 2000);
 
-  setShowCategoryModal(false);
+    await loadCategories();
+    setShowCategoryModal(false);
+
+  } catch (error) {
+    console.error("카테고리 추가/수정 실패", error);
+
+    setToastMessage('카테고리 처리 중 오류 발생');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  }
 };
 
+const handleDeleteCategory = async () => {
+  if (!categoryToDelete) return;
+  
+  const category = categories.find(c => c.no === categoryToDelete);
+  const isSubCategory = !!category?.parentId;
+
+  const hasChildren = categories.some(
+    c => c.parentId === categoryToDelete
+  );
+
+  if (hasChildren) {
+    setToastMessage('하위 카테고리가 존재하여 삭제할 수 없습니다');
+    setShowToast(false);
+    setTimeout(() => setShowToast(true), 0);
+    setTimeout(() => setShowToast(false), 2000);
+
+    return;
+  }
+
+  const token = sessionStorage.getItem('accessToken');
+
+  try {
+    const url = isSubCategory
+      ? `/api/admin/categories/subs/${categoryToDelete}`
+      : `/api/admin/categories/${categoryToDelete}`;
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+
+    if (!response.ok) {
+      console.log('categoryDelete FAIL');
+    }
+
+    setCategories(prev =>
+      prev.filter(c => c.no !== categoryToDelete)
+    );
+
+    setToastMessage('카테고리가 삭제되었습니다');
+  } catch (error) {
+    console.error(error);
+    setToastMessage('카테고리 삭제에 실패했습니다');
+  } finally {
+    setShowCategoryDeleteModal(false);
+
+    setTimeout(() => setShowToast(false), 2000);
+  }
+};
 
   // 관리자가 아닌 경우
   if (!isAdmin) {
@@ -1081,7 +1284,7 @@ export function AdminPage({
   // ��한 변경 함수
   const handleToggleSubscription = (userId: number) => {
     setUsers(users.map(u => 
-      u.userNo === userId ? { ...u, isSubscribed: !u.isSubscribed } : u
+      u.userNo === userId ? { ...u, isSubscribed: !u.subStatus } : u
     ));
     setOpenDropdown(null);
     alert('권한이 변경되었습니다.');
@@ -1364,11 +1567,15 @@ export function AdminPage({
                               <span className={
                                 user.admin 
                                   ? styles.badgeAdmin 
-                                  : user.isSubscribed 
+                                  : user.subStatus === 'ACTIVE'
                                   ? styles.badgeSubscribed 
                                   : styles.badgeUser
                               }>
-                                {user.admin ? '관리자' : user.isSubscribed ? '구독 중' : '미구독'}
+                                {user.admin 
+                                  ? '관리자' 
+                                  : user.subStatus === 'ACTIVE'
+                                  ? '구독 중' 
+                                  : '미구독'}
                               </span>
                             </td>
                             <td>
@@ -1433,7 +1640,13 @@ export function AdminPage({
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredCommunities.length > 0 ? (
+                      {loading ? (
+                        <tr>
+                          <td colSpan={6} className={styles.emptyCell}>
+                            모임 데이터를 불러오는 중입니다
+                          </td>
+                        </tr>
+                      ) : filteredCommunities.length > 0 ? (
                         filteredCommunities.map((community) => (
                           <tr 
                             key={community.no}
@@ -1465,7 +1678,7 @@ export function AdminPage({
                       ) : (
                         <tr>
                           <td colSpan={6} className={styles.emptyCell}>
-                            {searchTerm ? '검색 결과가 없습니다' : '모임 데이터를 불러오는 중입니다'}
+                            {searchTerm ? '검색 결과가 없습니다' : '등록된 모임이 없습니다'}
                           </td>
                         </tr>
                       )}
@@ -1509,22 +1722,33 @@ export function AdminPage({
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredReports.length > 0 ? (
+                      {loading ? (
+                        <tr>
+                          <td colSpan={7} className={styles.emptyCell}>
+                            신고 데이터를 불러오는 중입니다
+                          </td>
+                        </tr>
+                      ) : filteredReports.length > 0 ? (
                         filteredReports.map((report) => (
                           <tr key={report.no}>
                             <td>{report.user.username || '알 수 없음'}</td>
                             <td>{report.user.userId || '알 수 없음'}</td>
                             <td>{report.reason}</td>
                             <td>{new Date(report.createdAt).toLocaleDateString('ko-KR')}</td>
-                            <td>{new Date(report.banEndDate).toLocaleDateString('ko-KR')}</td>
+                            <td>
+                              {report.banEndDate
+                                ? new Date(report.banEndDate).toLocaleDateString('ko-KR')
+                                : '-'}
+                            </td>
                             <td style={{ textAlign: 'center' }}>
-                              <span 
+                              <span
                                 className={
-                                  report.reportCountAtBan >= 5
-                                  ? styles.reportCountDanger
-                                  : styles.reportCountBadge}
-                                >
-                                {(report.reportCountAtBan)}회
+                                  (report.reportCountAtBan ?? 0) >= 5
+                                    ? styles.reportCountDanger
+                                    : styles.reportCountBadge
+                                }
+                              >
+                                {(report.reportCountAtBan ?? 0)}회
                               </span>
                             </td>
                             <td>
@@ -1540,14 +1764,14 @@ export function AdminPage({
                               </button>
                             </td>
                           </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={6} className={styles.emptyCell}>
-                              {searchTerm ? '검색 결과가 없습니다' : '신고 데이터를 불러오는 중입니다'}
-                            </td>
-                          </tr>
-                        )}
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className={styles.emptyCell}>
+                            {searchTerm ? '검색 결과가 없습니다' : '등록된 신고가 없습니다'}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1765,7 +1989,7 @@ export function AdminPage({
                         moveParentCategory={moveParentCategory}
                         onEdit={() => {
                           setSelectedCategory(parent);
-                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: parent.no || null, icon: parent.icon || '' });
+                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: null, icon: parent.icon || '' });
                           setShowCategoryModal(true);
                         }}
                         onDelete={() => {
@@ -1780,7 +2004,7 @@ export function AdminPage({
                           gap: '12px',
                           alignItems: 'center',
                         }}>
-                          {subCategories.map((sub, index) => (
+                          {(parent.subCategoryList ?? []).map((sub, index) => (
                             <DraggableSubCategory
                               key={sub.no}
                               sub={sub}
@@ -1788,8 +2012,23 @@ export function AdminPage({
                               parentId={parent.no}
                               moveSubCategory={moveSubCategory}
                               onEdit={() => {
-                                setSelectedCategory(sub);
-                                setCategoryFormData({ name: sub.name, description: sub.description, parentId: sub.no || null, icon: sub.icon || '' });
+                                setSelectedCategory({
+                                  no: sub.no,
+                                  name: sub.name,
+                                  description: '', 
+                                  createdAt: sub.createdAt ?? '',
+                                  communityCount: 0, 
+                                  parentId: parent.no,
+                                  icon: ''
+                                });
+
+                                setCategoryFormData({
+                                  name: sub.name,
+                                  description: '',
+                                  parentId: parent.no, 
+                                  icon: ''
+                                });
+
                                 setShowCategoryModal(true);
                               }}
                               onDelete={() => {
@@ -1899,11 +2138,15 @@ export function AdminPage({
                   <span className={
                     selectedUser.admin 
                       ? styles.badgeAdmin 
-                      : selectedUser.isSubscribed 
+                      : selectedUser.subStatus === 'ACTIVE'
                       ? styles.badgeSubscribed 
                       : styles.badgeUser
                   }>
-                    {selectedUser.admin ? '관리자' : selectedUser.isSubscribed ? '구독 중' : '미구독'}
+                    {selectedUser.admin 
+                      ? '관리자' 
+                      : selectedUser.subStatus === 'ACTIVE'
+                      ? '구독 중' 
+                      : '미구독'}
                   </span>
                 </div>
               </div>
@@ -1911,7 +2154,7 @@ export function AdminPage({
                 <div className={styles.detailLabel}>신고 횟수</div>
                 <div className={styles.detailValue}>
                   <span className={styles.reportCountBadge}>
-                    {(user.reportCountAtBan)}회
+                    {(user.reportCountAtBan ?? 0)}회
                   </span>
                 </div>
               </div>
@@ -2597,6 +2840,8 @@ export function AdminPage({
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        setIconFile(file);
+                        
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           setCategoryFormData({ ...categoryFormData, icon: reader.result as string });
@@ -2723,13 +2968,7 @@ export function AdminPage({
               </button>
               <button
                 className={styles.modalButtonPrimary}
-                onClick={() => {
-                  setCategories(categories.filter(c => c.no !== categoryToDelete));
-                  setShowCategoryDeleteModal(false);
-                  setToastMessage('카테고리가 삭제되었습니다');
-                  setShowToast(true);
-                  setTimeout(() => setShowToast(false), 2000);
-                }}
+                onClick={handleDeleteCategory}
               >
                 삭제
               </button>
