@@ -142,6 +142,8 @@ public class UserApiController {
                     "error", "비밀번호가 틀렸습니다."));
         }
         String role = null;
+
+        // DB에서 ROLE_ADMIN으로 바꿔도 반영이 안되서 임시방편으로 추가
         if (user.getUserId().equals("test1@test.com")) {
             role = "ROLE_ADMIN";
         } else {

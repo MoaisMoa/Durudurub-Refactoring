@@ -1,5 +1,7 @@
 package com.aloha.durudurub.config;
 
+import com.aloha.durudurub.service.UserService;
+import com.aloha.durudurub.service.UserServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -14,6 +16,8 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.aloha.durudurub.security.JwtAuthenticationFilter;
+import com.aloha.durudurub.security.oauth.CustomOAuth2UserService;
+import com.aloha.durudurub.security.oauth.OAuthSuccessHandler;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +26,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+        // 소셜 로그인 오류
+//     private final UserService userService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuthSuccessHandler oAuthSuccessHandler;
+
+    // @RequiredArgsConstructor에서 이미 생성자 자동 생성 -> 충돌
+    // SecurityConfig(UserServiceImpl userServiceImpl) {
+    //     this.userServiceImpl = userServiceImpl;
+    //     this.CustomOAuth2UserService = null;
+    // }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,7 +59,8 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/img/**",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/oauth2/**"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/club/create", "/club/*/edit", "/club/*/delete").authenticated()
@@ -53,15 +68,25 @@ public class SecurityConfig {
                         .requestMatchers("/users/mypage/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                // JWT 필터
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // OAuth
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(user -> user
+                                .userService(customOAuth2UserService)
+                        )
+                        .successHandler(oAuthSuccessHandler)
+                );
 
         return http.build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    // 순환참조 오류
+//     @Bean
+//     public PasswordEncoder passwordEncoder() {
+//         return new BCryptPasswordEncoder();
+//     }
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {

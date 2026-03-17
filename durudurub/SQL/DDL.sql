@@ -61,7 +61,10 @@ CREATE TABLE `users` (
     UNIQUE KEY uk_user_username (`username`)
     -- UK 는 특별한 일 없으면 건들지 말아주세요 (특히 users 테이블)
 );
-
+-- 소셜 로그인 추가
+ALTER TABLE `users`
+ADD provider VARCHAR(20),
+ADD provider_id VARCHAR(100);
 
 -- 2. user_auth (회원 권한부여)
 

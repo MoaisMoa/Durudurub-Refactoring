@@ -17,6 +17,8 @@
         <result property="address" column="address"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+        <result property="provider" column="provider" />
+        <result property="providerId" column="provider_id" />
         <collection property="authList" javaType="java.util.ArrayList" 
                     ofType="com.aloha.durudurub.dto.Auth"
                     column="no" select="com.aloha.durudurub.dao.AuthMapper.listByUserNo"/>
@@ -50,9 +52,10 @@
         WHERE username = #{username}
     </select>
     
-    <!-- 회원 등록 -->
+    <!-- 회원 등록
+        ✨ 소셜 로그인 추가 -->
     <insert id="insert" parameterType="com.aloha.durudurub.dto.User" useGeneratedKeys="true" keyProperty="no">
-        INSERT INTO users (id, user_id, password, username, profile_img, age, gender, address)
+        INSERT INTO users (id, user_id, password, username, profile_img, age, gender, address, provider, provider_id)
         VALUES (
             UUID(),
             #{userId},
@@ -60,10 +63,12 @@
             #{username},
             <!-- COALESCE(#{profileImg}, '/static/img/default-profile.png'), -->
             <!-- 마이페이지 이미지 오류 -->
-            COALESCE(#{profileImg}, '/img/default-profile.png'),
+            COALESCE(#{profileImg}, 'static/img/default-profile.png'),
             #{age},
             COALESCE(#{gender}, '공개안함'),
-            #{address}
+            #{address},
+            #{provider},
+            #{providerId}
         )
     </insert>
     
@@ -180,4 +185,10 @@
         )
     </insert>
 
+    <!-- 소셜 로그인 -->
+    <select id="findByProviderAndProviderId" resultMap="userResultMap">
+        SELECT *
+        FROM users
+        WHERE provider = #{provider} AND provider_id = #{providerId}
+    </select>
 </mapper>

@@ -54,6 +54,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAccessToken(token);
     sessionStorage.setItem('user', JSON.stringify(userData));
     sessionStorage.setItem('accessToken', token);
+
+    console.log("LOGIN", token);
   };
 
   const handleLogout = () => {

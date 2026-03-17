@@ -23,6 +23,7 @@ import {
 import { Error403Page } from '@/pages/error/Error403Page';
 import { Error404Page } from '@/pages/error/Error404Page';
 import { Error500Page } from '@/pages/error/Error500Page';
+import OAuthSuccess from './pages/login/OAuthSuccess';
 
 export const router = createBrowserRouter([
   {
@@ -119,6 +120,11 @@ export const router = createBrowserRouter([
         path: '*',
         element: <Error404Page />,
       },
+      // 소셜 로그인
+      {
+        path: '/oauth-success',
+        element: <OAuthSuccess />
+      }
     ],
   },
 ]);
