@@ -10,6 +10,7 @@ import { AppProvider, useApp } from './contexts/AppContext';
 import { MyPageWrapper } from "./pages/mypage/MyPageWrapper";
 import { MyMeetingsWrapper } from "./pages/mypage/MyMeetingsWrapper";
 import { MiniGamePageWrapper, AdminPageWrapper, FavoritesPageWrapper } from './pages/other/OtherPagesWrapper';
+import OAuthSuccess from './pages/login/OAuthSuccess';
 import { Navbar } from './components/header/Navbar';
 import { Footer } from './components/footer/Footer';
 import { BottomNavigation } from './components/footer/BottomNavigation';
@@ -62,9 +63,14 @@ function AppRoutes() {
         element={ <FavoritesPageWrapper />}
       />
 
-        <Route 
+      <Route 
         path="/admin"
         element={ <AdminPageWrapper />}
+      />
+
+      <Route 
+        path="/oauth-success"
+        element={ <OAuthSuccess />}
       />
     </Routes>
   );
