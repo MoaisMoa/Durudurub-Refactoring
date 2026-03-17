@@ -14,6 +14,8 @@ import OAuthSuccess from './pages/login/OAuthSuccess';
 import { Navbar } from './components/header/Navbar';
 import { Footer } from './components/footer/Footer';
 import { BottomNavigation } from './components/footer/BottomNavigation';
+import { NoticePageWrapper } from './pages/notice/NoticePageWrapper';
+import { NoticeWritePageWrapper } from './pages/notice/NoticeWritePageWrapper';
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -72,6 +74,16 @@ function AppRoutes() {
         path="/oauth-success"
         element={ <OAuthSuccess />}
       />
+
+      <Route 
+        path="/notice"
+        element={ <NoticePageWrapper />}
+      />
+      <Route 
+        path="/notice/write"
+        element={ <NoticeWritePageWrapper />}
+      />
+
     </Routes>
   );
 }
