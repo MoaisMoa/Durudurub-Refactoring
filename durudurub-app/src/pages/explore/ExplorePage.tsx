@@ -465,13 +465,13 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                 </div>
 
                 {/* 모바일 버전 - 가로형 레이아웃 */}
-                <div className="md:hidden flex gap-3 p-3">
+                <div className="md:hidden flex gap-3 p-3 min-h-[120px] items-stretch">
                   {/* 왼쪽: 썸네일 */}
                   <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/20 flex items-center justify-center">
                     <img
                       src={thumbnailSrc}
                       alt={community.title}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover object-center scale-110"
                       onError={() => {
                         setBrokenMeetingImages((prev) => {
                           const next = new Set(prev);
