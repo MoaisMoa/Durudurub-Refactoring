@@ -1,7 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
-import { Navbar } from '@/components/header/Navbar';
 
 interface NoticeWritePageProps {
   onBack: () => void;
@@ -127,19 +126,6 @@ export function NoticeWritePage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar
-        onSignupClick={onSignupClick || (() => {})}
-        onLoginClick={onLoginClick || (() => {})}
-        onLogoClick={onLogoClick || (() => {})}
-        user={user}
-        onMyPageClick={onMyPageClick || (() => {})}
-        onMiniGameClick={onMiniGameClick || (() => {})}
-        onMyMeetingsClick={onMyMeetingsClick || (() => {})}
-        profileImage={profileImage}
-        onLogout={onLogout || (() => {})}
-        onNoticeClick={onBack}
-      />
-
       {/* 헤더 */}
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-6">

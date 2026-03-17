@@ -3,7 +3,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Upload, MapPin, Calendar, Users, FileText, ArrowLeft } from 'lucide-react';
 import api from '@/api/axios';
-import { Navbar } from '@/components/header/Navbar';
 
 // 커스텀 마커 아이콘 생성
 const customIcon = L.divIcon({
@@ -183,20 +182,6 @@ export function CreateCommunityPage({ onBack, user, onSignupClick, onLoginClick,
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 네비게이션 바 */}
-      <Navbar 
-        onSignupClick={onSignupClick}
-        onLoginClick={onLoginClick}
-        onLogoClick={onLogoClick}
-        onNoticeClick={onNoticeClick}
-        onMyPageClick={onMyPageClick}
-        onMiniGameClick={onMiniGameClick}
-        onMyMeetingsClick={onMyMeetingsClick}
-        user={user}
-        profileImage={profileImage}
-        onLogout={onLogout}
-      />
-      
       {/* 모바일 뒤로가기 버튼 */}
       <div className="md:hidden sticky top-16 bg-white border-b border-gray-200 px-4 py-3 z-10">
         <button

@@ -1,11 +1,8 @@
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
-import { Navbar } from '@/components/header/Navbar';
 import { HeroSection } from '@/components/home/HeroSection';
 import { CategorySection } from '@/components/home/CategorySection';
 import { AdBanner } from '@/components/home/AdBanner';
-import { Footer } from '@/components/footer/Footer';
-import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { SearchModal } from '@/components/modal/SearchModal';
 import { useApp } from '@/contexts/AppContext';
 import { mockCommunities } from '@/data/mockCommunities';
@@ -32,33 +29,6 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Navbar */}
-      <header className={styles.navbar}>
-        <Navbar
-          onSignupClick={() => navigate('/signup')}
-          onLoginClick={() => navigate('/login')}
-          onLogoClick={() => navigate('/')}
-          onNoticeClick={() => navigate('/notice')}
-          onMiniGameClick={() => navigate('/minigame')}
-          onAdminClick={() => navigate('/admin')}
-          onPaymentClick={() => navigate('/payment')}
-          onExploreClick={(searchQuery?: string) => {
-            if (searchQuery) {
-              navigate(`/explore?q=${encodeURIComponent(searchQuery)}`);
-            } else {
-              navigate('/explore');
-            }
-          }}
-          onCommunityClick={handleCommunityClick}
-          communities={mockCommunities}
-          user={user}
-          profileImage={profileImage}
-          onLogout={handleLogout}
-          onMyPageClick={() => navigate('/mypage')}
-          onMyMeetingsClick={() => navigate('/meetings')}
-        />
-      </header>
-
       {/* Main Content */}
       <main className="flex-1">
         <div className={styles.container}>
@@ -81,31 +51,6 @@ export function HomePage() {
           </section>
         </div>
       </main>
-
-      {/* Footer */}
-      <Footer />
-
-      {/* Bottom Navigation (모바일) */}
-      <BottomNavigation
-        onHomeClick={() => navigate('/')}
-        onMyPageClick={() => {
-          if (user) {
-            navigate('/mypage');
-          } else {
-            navigate('/login');
-          }
-        }}
-        onCategoryClick={() => {
-          // 카테고리 섹션으로 스크롤
-          const categorySection = document.querySelector(`.${styles.categorySection}`);
-          if (categorySection) {
-            categorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }}
-        onSearchClick={() => setIsSearchModalOpen(true)}
-        currentPage="home"
-        isLoggedIn={!!user}
-      />
 
       {/* Search Modal */}
       <SearchModal

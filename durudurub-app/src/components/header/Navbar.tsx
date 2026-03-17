@@ -286,7 +286,7 @@ function AISearchModal({
   );
 }
 
-// 구독 유도 모달 컴포넌트
+// 구독 모달 컴포넌트
 function SubscriptionModal({ onClose, onPaymentClick }: { onClose: () => void; onPaymentClick?: () => void }) {
   const handleSubscribe = () => {
     onClose();
@@ -404,7 +404,7 @@ function LoginRequiredModal({ onClose, onLoginClick }: { onClose: () => void; on
             <ul className="space-y-2 text-sm text-purple-800">
               <li className="flex items-start">
                 <span className="text-purple-500 mr-2">✓</span>
-                <span>자연어로 원하는 모임 찾기</span>
+                <span>원하는 모임 찾기</span>
               </li>
               <li className="flex items-start">
                 <span className="text-purple-500 mr-2">✓</span>
@@ -552,7 +552,9 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   }, [isUserMenuOpen]);
 
   return (
-    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <>
+      <div className="h-25" aria-hidden="true" />
+      <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-25">
           {/* 로고 */}
@@ -796,6 +798,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
       {showSubscriptionModal && <SubscriptionModal onClose={() => setShowSubscriptionModal(false)} onPaymentClick={onPaymentClick} />}
       {/* 로그인 유도 모달 */}
       {showLoginRequiredModal && <LoginRequiredModal onClose={() => setShowLoginRequiredModal(false)} onLoginClick={onLoginClick} />}
-    </nav>
+      </nav>
+    </>
   );
 }

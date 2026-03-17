@@ -1,7 +1,6 @@
 import { ArrowLeft, Bell, Calendar, Eye, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
-import { Navbar } from '@/components/header/Navbar';
 import { toast } from 'sonner';
 
 interface NoticePageProps {
@@ -373,20 +372,6 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
   if (selectedNotice) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* 네비게이션 바 */}
-        <Navbar
-          onSignupClick={onSignupClick}
-          onLoginClick={onLoginClick}
-          onLogoClick={onLogoClick}
-          onNoticeClick={() => {}} // 이미 공지사항 페이지에 있으므로 빈 함수
-          onMyPageClick={onMyPageClick}
-          onMiniGameClick={onMiniGameClick}
-          onMyMeetingsClick={onMyMeetingsClick}
-          user={user}
-          profileImage={profileImage}
-          onLogout={onLogout}
-        />
-        
         {/* 헤더 */}
         <div className="bg-white border-b sticky top-0 z-10">
           <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -509,20 +494,6 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 네비게이션 바 */}
-      <Navbar
-        onSignupClick={onSignupClick}
-        onLoginClick={onLoginClick}
-        onLogoClick={onLogoClick}
-        onNoticeClick={() => {}} // 이미 공지사항 페이지에 있으므로 빈 함수
-        onMyPageClick={onMyPageClick}
-        onMiniGameClick={onMiniGameClick}
-        onMyMeetingsClick={onMyMeetingsClick}
-        user={user}
-        profileImage={profileImage}
-        onLogout={onLogout}
-      />
-      
       {/* 헤더 */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">

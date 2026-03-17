@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { LadderGame } from '@/components/games/LadderGame';
 import { WheelSpinnerGame } from '@/components/games/WheelSpinnerGame';
 import { WinnerDrawGame } from '@/components/games/WinnerDrawGame';
-import { Navbar } from '@/components/header/Navbar';
-import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { GameAdModal } from '@/components/modal/GameAdModal';
 
 interface MiniGamePageProps {
@@ -76,20 +74,6 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
   if (currentGame === 'menu') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/5 pb-20 md:pb-0">
-        {/* 네비게이션 바 */}
-        <Navbar 
-          onSignupClick={onSignupClick}
-          onLoginClick={onLoginClick}
-          onLogoClick={onLogoClick}
-          onNoticeClick={onNoticeClick}
-          onMyPageClick={onMyPageClick}
-          onMiniGameClick={onMiniGameClick}
-          onMyMeetingsClick={onMyMeetingsClick}
-          user={user}
-          profileImage={profileImage}
-          onLogout={onLogout}
-        />
-        
         {/* 메인 컨텐츠 */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* 타이틀 */}
@@ -118,15 +102,6 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
           </div>
         </div>
 
-        {/* 모바일 하단 네비게이션 */}
-        <BottomNavigation
-          onHomeClick={() => onLogoClick?.()}
-          onMyPageClick={() => onMyPageClick?.()}
-          onCategoryClick={() => onLogoClick?.()}
-          onSearchClick={() => onLogoClick?.()}
-          currentPage="home"
-          isLoggedIn={!!user}
-        />
       </div>
     );
   }
@@ -134,20 +109,6 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
   // 각 게임 화면은 다음 단계에서 구현
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/5 pb-20 md:pb-0">
-      {/* 네비게이션 바 */}
-      <Navbar 
-        onSignupClick={onSignupClick}
-        onLoginClick={onLoginClick}
-        onLogoClick={onLogoClick}
-        onNoticeClick={onNoticeClick}
-        onMyPageClick={onMyPageClick}
-        onMiniGameClick={onMiniGameClick}
-        onMyMeetingsClick={onMyMeetingsClick}
-        user={user}
-        profileImage={profileImage}
-        onLogout={onLogout}
-      />
-
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-white rounded-2xl p-8">
           <div className="flex justify-start mb-6">
@@ -167,15 +128,6 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
       {/* 광고 모달 */}
       {showAdModal && <GameAdModal onClose={() => setShowAdModal(false)} />}
 
-      {/* 모바일 하단 네비게이션 */}
-      <BottomNavigation
-        onHomeClick={() => onLogoClick?.()}
-        onMyPageClick={() => onMyPageClick?.()}
-        onCategoryClick={() => onLogoClick?.()}
-        onSearchClick={() => onLogoClick?.()}
-        currentPage="home"
-        isLoggedIn={!!user}
-      />
     </div>
   );
 }

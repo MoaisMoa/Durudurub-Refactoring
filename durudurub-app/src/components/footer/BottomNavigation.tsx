@@ -3,10 +3,10 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface BottomNavigationProps {
-  onHomeClick: () => void;
-  onMyPageClick: () => void;
-  onCategoryClick: () => void;
-  onSearchClick: (searchQuery?: string) => void;
+  onHomeClick?: () => void;
+  onMyPageClick?: () => void;
+  onCategoryClick?: () => void;
+  onSearchClick?: (searchQuery?: string) => void;
   onAISearchClick?: () => void;
   currentPage?: string;
   isLoggedIn?: boolean;
@@ -28,7 +28,7 @@ export function BottomNavigation({
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    onSearchClick(searchQuery.trim());
+    onSearchClick?.(searchQuery.trim());
     setShowSearchModal(false);
     setSearchQuery('');
   };
@@ -56,7 +56,13 @@ export function BottomNavigation({
       id: 'mypage',
       icon: User,
       label: '마이페이지',
-      onClick: onMyPageClick,
+      onClick: () => {
+        if (onMyPageClick) {
+          onMyPageClick();
+          return;
+        }
+        navigate('/mypage');
+      },
     },
   ];
 

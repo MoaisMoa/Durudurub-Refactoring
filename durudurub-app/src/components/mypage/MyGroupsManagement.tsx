@@ -1,7 +1,5 @@
 import { ArrowLeft, Users, Crown, Clock, Trash2, UserCheck, UserX, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Navbar } from '@/components/header/Navbar';
-import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { toast, Toaster } from 'sonner';
 
 interface MyGroupsManagementProps {
@@ -506,20 +504,6 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
       <Toaster position="top-center" richColors />
-      {/* 네비게이션 바 */}
-      <Navbar
-        onSignupClick={onSignupClick}
-        onLoginClick={onLoginClick}
-        onLogoClick={onLogoClick}
-        onNoticeClick={onNoticeClick}
-        onMyPageClick={onMyPageClick}
-        onMiniGameClick={onMiniGameClick}
-        onMyMeetingsClick={onMyMeetingsClick}
-        user={user}
-        profileImage={profileImage}
-        onLogout={onLogout}
-      />
-
       {/* 모바일 뒤로가기 버튼 */}
       <div className="md:hidden sticky top-16 bg-white border-b border-gray-200 px-4 py-3 z-10">
         <button
@@ -862,17 +846,6 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
         </div>
       )}
 
-      {/* 모바일 하단 네비게이션 */}
-      <BottomNavigation
-        onHomeClick={() => onLogoClick?.()}
-        onMyPageClick={() => onMyPageClick?.()}
-        onCategoryClick={() => onLogoClick?.()}
-        onSearchClick={() => {
-          // 검색 페이지로 이동 (일단 홈으로)
-          onLogoClick?.();
-        }}
-        isLoggedIn={!!user}
-      />
     </div>
   );
 }

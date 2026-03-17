@@ -28,7 +28,6 @@ import {
   GripVertical,
 } from 'lucide-react';
 import styles from '@/pages/admin/AdminPage.module.css';
-import { Navbar } from '@/components/header/Navbar';
 import { data } from 'react-router-dom';
 // import { projectId, publicAnonKey } from 'utils/supabase/info';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
@@ -889,20 +888,6 @@ export function AdminPage({
   if (!isAdmin) {
     return (
       <div className={styles.container}>
-        <header className={styles.navbar}>
-          <Navbar
-            onSignupClick={onSignupClick}
-            onLoginClick={onLoginClick}
-            onLogoClick={onLogoClick}
-            onNoticeClick={onNoticeClick}
-            onMiniGameClick={onMiniGameClick}
-            user={user}
-            profileImage={profileImage}
-            onLogout={onLogout}
-            onMyPageClick={onMyPageClick}
-            onMyMeetingsClick={onMyMeetingsClick}
-          />
-        </header>
         <main className={styles.main}>
           <div className={styles.accessDenied}>
             <Shield className="w-16 h-16 text-gray-400 mb-4" />
@@ -1036,21 +1021,6 @@ export function AdminPage({
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={styles.container}>
-        <header className={styles.navbar}>
-          <Navbar
-            onSignupClick={onSignupClick}
-            onLoginClick={onLoginClick}
-            onLogoClick={onLogoClick}
-            onNoticeClick={onNoticeClick}
-            onMiniGameClick={onMiniGameClick}
-            user={user}
-            profileImage={profileImage}
-            onLogout={onLogout}
-            onMyPageClick={onMyPageClick}
-            onMyMeetingsClick={onMyMeetingsClick}
-          />
-        </header>
-
         <main className={styles.main}>
           <div className={styles.contentWrapper}>
           {/* 헤더 */}

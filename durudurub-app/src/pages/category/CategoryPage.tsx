@@ -1,7 +1,5 @@
 import { ArrowLeft, Star, MapPin, Calendar, Users, X, Lock, Plus, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { BottomNavigation } from '@/components/footer/BottomNavigation';
-import { Navbar } from '@/components/header/Navbar';
 import { useEffect, useState } from 'react';
 import api from '@/api/axios';
 
@@ -374,14 +372,6 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar
-        onSignupClick={onSignupClick}
-        onLoginClick={onLoginClick}
-        onLogoClick={onLogoClick}
-        onMyPageClick={onMyPageClick}
-        user={user}
-      />
-
       {/* 헤더 */}
       <div className="bg-[#FBF7F0] py-12 relative">
         {/* 모바일 뒤로가기 버튼 */}
@@ -708,14 +698,6 @@ export function CategoryPage({ category, onBack, user, onSignupClick, onMeetingC
         </div>
       )}
 
-      {/* 하단 네비게이션 */}
-      <BottomNavigation
-        onHomeClick={() => onLogoClick?.()}
-        onMyPageClick={() => onMyPageClick?.()}
-        onCategoryClick={() => onLogoClick?.()}
-        onSearchClick={() => onLogoClick?.()}
-        isLoggedIn={!!user}
-      />
     </div>
   );
 }

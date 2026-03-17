@@ -1,7 +1,5 @@
 import { Heart, ArrowLeft, Users, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Navbar } from '@/components/header/Navbar';
-import { BottomNavigation } from '@/components/footer/BottomNavigation';
 
 interface FavoritesPageProps {
   onBack: () => void;
@@ -101,20 +99,6 @@ export function FavoritesPage({
 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
-      {/* 네비게이션 바 */}
-      <Navbar
-        onSignupClick={onSignupClick}
-        onLoginClick={onLoginClick}
-        onLogoClick={onLogoClick}
-        onNoticeClick={onNoticeClick}
-        onMyPageClick={onMyPageClick}
-        onMiniGameClick={onMiniGameClick}
-        onMyMeetingsClick={onMyMeetingsClick}
-        user={user}
-        profileImage={profileImage}
-        onLogout={onLogout}
-      />
-
       {/* 모바일 헤더 (뒤로가기 버튼 + 제목) */}
       <div className="md:hidden sticky top-16 bg-white border-b border-gray-200 px-4 py-3 z-10">
         <button
@@ -284,14 +268,6 @@ export function FavoritesPage({
         )}
       </div>
 
-      {/* 하단 네비게이션 바 */}
-      <BottomNavigation
-        onHomeClick={() => onLogoClick?.()}
-        onMyPageClick={() => onMyPageClick?.()}
-        onCategoryClick={() => onLogoClick?.()}
-        onSearchClick={() => onExploreClick?.()}
-        isLoggedIn={!!user}
-      />
     </div>
   );
 }

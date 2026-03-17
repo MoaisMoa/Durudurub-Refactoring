@@ -10,6 +10,9 @@ import { AppProvider, useApp } from './contexts/AppContext';
 import { MyPageWrapper } from "./pages/mypage/MyPageWrapper";
 import { MyMeetingsWrapper } from "./pages/mypage/MyMeetingsWrapper";
 import { MiniGamePageWrapper, AdminPageWrapper, FavoritesPageWrapper } from './pages/other/OtherPagesWrapper';
+import { Navbar } from './components/header/Navbar';
+import { Footer } from './components/footer/Footer';
+import { BottomNavigation } from './components/footer/BottomNavigation';
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -59,7 +62,7 @@ function AppRoutes() {
         element={ <FavoritesPageWrapper />}
       />
 
-            <Route 
+        <Route 
         path="/admin"
         element={ <AdminPageWrapper />}
       />
@@ -70,8 +73,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <AppProvider>
-      <Toaster position="top-center" richColors />
-      <AppRoutes />
+        <Navbar />
+          <Toaster position="top-center" richColors />
+          <AppRoutes />
+          <BottomNavigation />
+        <Footer />
     </AppProvider>
   );
 }
