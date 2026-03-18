@@ -31,8 +31,8 @@ function AppRoutes() {
           <LoginPage
             onClose={() => navigate('/')}
             onSignupClick={() => navigate('/signup')}
-            onLoginSuccess={(userData, token) => {
-              handleLogin(userData, token);
+            onLoginSuccess={(userData, token, profileImage) => {
+              handleLogin(userData, token, profileImage);
               navigate('/');
             }}
           />

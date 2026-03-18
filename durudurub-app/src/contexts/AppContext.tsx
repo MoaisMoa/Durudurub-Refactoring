@@ -17,7 +17,7 @@ interface AppContextType {
   setUser: Dispatch<SetStateAction<User | null>>;
   setAccessToken: (token: string | null) => void;
   setProfileImage: (image: string | null) => void;
-  handleLogin: (userData: User, token: string) => void;
+  handleLogin: (userData: User, token: string, profileImage?: string | null) => void;
   handleLogout: () => void;
   handleProfileImageUpdate: (newImage: string | null) => void;
 }
@@ -66,11 +66,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const handleLogin = (userData: User, token: string) => {
+  const resolveProfileImageUrl = (image: string | null | undefined) => {
+    if (!image) return null;
+    if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:')) {
+      return image;
+    }
+    if (image.startsWith('/')) {
+      return `http://localhost:8080${image}`;
+    }
+    return `http://localhost:8080/${image}`;
+  };
+
+  const handleLogin = (userData: User, token: string, newProfileImage?: string | null) => {
     setUser(userData);
     setAccessToken(token);
     sessionStorage.setItem('user', JSON.stringify(userData));
     sessionStorage.setItem('accessToken', token);
+
+    const resolvedImage = resolveProfileImageUrl(newProfileImage);
+    if (resolvedImage) {
+      setProfileImage(resolvedImage);
+      sessionStorage.setItem('profileImage', resolvedImage);
+    } else {
+      setProfileImage(null);
+      sessionStorage.removeItem('profileImage');
+    }
   };
 
   const handleLogout = () => {

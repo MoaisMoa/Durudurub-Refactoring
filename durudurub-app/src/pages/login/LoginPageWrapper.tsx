@@ -15,8 +15,8 @@ export function LoginPageWrapper() {
       onClose={() => navigate(from)}
       onSignupClick={() => navigate('/signup')}
       onForgotPasswordClick={() => navigate('/forgot-password')}
-      onLoginSuccess={(userData, token) => {
-        handleLogin(userData, token);
+      onLoginSuccess={(userData, token, profileImage) => {
+        handleLogin(userData, token, profileImage);
         navigate(from);
       }}
     />

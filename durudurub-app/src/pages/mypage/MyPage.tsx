@@ -44,17 +44,33 @@ export function MyPage({
   const [totalMyClub, setTotalMyClub] = useState<number>(0);
   const [totalFavorite, setTotalFavorite] = useState<number>(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const resolveProfileImageUrl = (image: string | null | undefined) => {
+    if (!image) return null;
+    if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:')) {
+      return image;
+    }
+    if (image.startsWith('/')) {
+      return `http://localhost:8080${image}`;
+    }
+    return `http://localhost:8080/${image}`;
+  };
+
   useEffect(() => {
   const fetchUser = async () => {
     const token = sessionStorage.getItem('accessToken');
-    const res = await fetch('/api/users/me', {
+    const res = await fetch('/api/user/me', {
       headers: { Authorization: `Bearer ${token}` }
     });
 
+    if (!res.ok) return;
+
     const data = await res.json();
 
-    if (data.profileImgUrl) {
-      setProfileImage(`http://localhost:8080${data.profileImgUrl}`);
+    const resolvedImage = resolveProfileImageUrl(data.profileImg);
+    if (resolvedImage) {
+      setProfileImage(resolvedImage);
+      onProfileImageUpdate?.(resolvedImage);
     }
   };
 

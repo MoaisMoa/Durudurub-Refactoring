@@ -6,7 +6,7 @@ interface LoginPageProps {
   onClose: () => void;
   onSignupClick: () => void;
   onForgotPasswordClick?: () => void;
-  onLoginSuccess?: (user: any, accessToken: string) => void;
+  onLoginSuccess?: (user: any, accessToken: string, profileImage?: string | null) => void;
 }
 
 export function LoginPage({ onClose, onSignupClick, onForgotPasswordClick, onLoginSuccess }: LoginPageProps) {
@@ -50,16 +50,28 @@ export function LoginPage({ onClose, onSignupClick, onForgotPasswordClick, onLog
       console.log('[LoginPage] 서버 응답:', data);
 
       if (data.success) {
+        const resolvedProfileImage = data.profileImg
+          ? (data.profileImg.startsWith('http://') || data.profileImg.startsWith('https://')
+              ? data.profileImg
+              : `http://localhost:8080${data.profileImg.startsWith('/') ? data.profileImg : `/${data.profileImg}`}`)
+          : null;
+
         const loginUser = {
           id: data.userId,
           userId: data.userId,
           email: data.userId,
-          name: data.userId,
+          name: data.username || data.userId,
+          username: data.username || data.userId,
           isAdmin: data.role === 'ROLE_ADMIN',
         };
 
         sessionStorage.setItem("accessToken", data.token);
         sessionStorage.setItem("user", JSON.stringify(loginUser));
+        if (resolvedProfileImage) {
+          sessionStorage.setItem('profileImage', resolvedProfileImage);
+        } else {
+          sessionStorage.removeItem('profileImage');
+        }
 
         if (formData.rememberMe) {
           localStorage.setItem("savedUserId", formData.userId);
@@ -70,7 +82,7 @@ export function LoginPage({ onClose, onSignupClick, onForgotPasswordClick, onLog
         console.log('[LoginPage] loginUser:', loginUser);
         console.log('[LoginPage] onLoginSuccess 존재여부:', !!onLoginSuccess);
         if (onLoginSuccess) {
-          onLoginSuccess(loginUser, data.token);
+          onLoginSuccess(loginUser, data.token, resolvedProfileImage);
         } else {
           onClose();
         }

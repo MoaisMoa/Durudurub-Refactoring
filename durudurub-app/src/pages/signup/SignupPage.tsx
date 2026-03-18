@@ -12,6 +12,7 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formData, setFormData] = useState({
     userId: '',
@@ -80,6 +81,9 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
     form.append("age", formData.age);
     form.append("gender", formData.gender);
     form.append("address", formData.address);
+    if (profileImageFile) {
+      form.append('profileImgFile', profileImageFile);
+    }
 
     const res = await api.post("/api/users/join", form);
 
@@ -159,11 +163,15 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setProfileImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImage(reader.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      setProfileImageFile(null);
+      setProfileImage(null);
     }
   };
 

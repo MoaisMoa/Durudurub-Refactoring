@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -106,7 +105,7 @@ public class UserApiController {
 
         } catch (Exception e) {
             log.error("회원가입 실패", e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("서버 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -156,6 +155,8 @@ public class UserApiController {
                 "message", "로그인 성공",
                 "token", token,
                 "userId", user.getUserId(),
+            "username", user.getUsername(),
+            "profileImg", user.getProfileImg(),
                 "role", role));
     }
 }
