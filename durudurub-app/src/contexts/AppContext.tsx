@@ -28,7 +28,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  
   // 컴포넌트 마운트 시 sessionStorage에서 로그인 정보 확인
   useEffect(() => {
     const storedToken = sessionStorage.getItem('accessToken');
@@ -36,8 +35,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedProfileImage = sessionStorage.getItem('profileImage');
 
     if (storedToken && storedUser) {
-      const tokenParts = storedToken.split('.');
+      const tokenParts = storedToken.split('.'); 
       if (tokenParts.length === 3) {
+        try {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp && payload.exp < now) {
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('profileImage');
+            return;
+          }
+        } catch {
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('user');
+          sessionStorage.removeItem('profileImage');
+          return;
+        }
+
         setAccessToken(storedToken);
         setUser(JSON.parse(storedUser));
         if (storedProfileImage) {
@@ -56,8 +71,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAccessToken(token);
     sessionStorage.setItem('user', JSON.stringify(userData));
     sessionStorage.setItem('accessToken', token);
-
-    console.log("LOGIN", token);
   };
 
   const handleLogout = () => {
