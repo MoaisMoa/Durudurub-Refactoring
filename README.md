@@ -268,7 +268,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 ```
 
 ```java
-
+// 소셜 로그인 커스터마이징을 위한 필수 클래스
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService{
