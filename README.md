@@ -198,7 +198,7 @@ durudurub-app/                      ← React 프론트엔드 (Vite + TypeScript
 <details>
   <summary>요구사항 및 기능 정의서 펼치기</summary>
   
-  ![요구사항&기능정의서1](./durudurub/uploads/etc/tdl.png)
+  ![요구사항&기능정의서1](./durudurub/uploads/etc/tdl1.png)
   ![요구사항&기능정의서2](./durudurub/uploads/etc/tdl2.PNG)
   ![요구사항&기능정의서3](./durudurub/uploads/etc/tdl3.PNG)
   ![요구사항&기능정의서3](./durudurub/uploads/etc/tdl4.PNG)
@@ -208,7 +208,7 @@ durudurub-app/                      ← React 프론트엔드 (Vite + TypeScript
 <details>
   <summary>ERD 펼치기</summary>
   
-  ![ERD](./durudurub/uploads/etc/erd2.png)
+  ![ERD](./durudurub/uploads/etc/ERD.png)
 </details>
 
 <br>
@@ -547,7 +547,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 <details>
   <summary>모임 상세 화면 보기</summary>
   
-  <img src="./durudurub/uploads/figma/club.PNG" width="720" alt="모임상세1"><br>
+  <img src="./durudurub/uploads/figma/club1.PNG" width="720" alt="모임상세1"><br>
   <img src="./durudurub/uploads/figma/club2.PNG" width="720" alt="모임상세2">
 </details>
 <br>
@@ -564,7 +564,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 <details>
   <summary>로그인 / 회원가입 화면 보기</summary>
   
-  <img src="./durudurub/uploads/figma/login.PNG" width="720" alt="로그인1"><br>
+  <img src="./durudurub/uploads/figma/login1.PNG" width="720" alt="로그인1"><br>
   <img src="./durudurub/uploads/figma/login2.PNG" width="720" alt="로그인2"><br>
   <img src="./durudurub/uploads/figma/login3.PNG" width="720" alt="로그인3">
 </details>
@@ -574,7 +574,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 <details>
   <summary>마이페이지 화면 보기</summary>
   
-  <img src="./durudurub/uploads/figma/my.PNG" width="720" alt="마이페이지1"><br>
+  <img src="./durudurub/uploads/figma/my1.PNG" width="720" alt="마이페이지1"><br>
   <img src="./durudurub/uploads/figma/my5.PNG" width="720" alt="마이페이지2"><br>
   <img src="./durudurub/uploads/figma/my2.PNG" width="720" alt="마이페이지3"><br>
   <img src="./durudurub/uploads/figma/my3.PNG" width="720" alt="마이페이지4"><br>
@@ -594,7 +594,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 <details>
   <summary>공지사항 페이지 화면 보기</summary>
   
-  <img src="./durudurub/uploads/figma/notice.PNG" width="720" alt="공지사항1"><br>
+  <img src="./durudurub/uploads/figma/notice1.PNG" width="720" alt="공지사항1"><br>
   <img src="./durudurub/uploads/figma/notice2.PNG" width="720" alt="공지사항2"><br>
   <img src="./durudurub/uploads/figma/notice3.PNG" width="720" alt="공지사항3">
 </details>
@@ -603,10 +603,13 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 <details>
   <summary>관리자 페이지 화면 보기</summary>
   
-  <img src="./durudurub/uploads/figma/admin.PNG" width="720" alt="관리자1"><br>
+  <img src="./durudurub/uploads/figma/admin1.PNG" width="720" alt="관리자1"><br>
   <img src="./durudurub/uploads/figma/admin2.PNG" width="720" alt="관리자2"><br>
   <img src="./durudurub/uploads/figma/admin3.PNG" width="720" alt="관리자3"><br>
-  <img src="./durudurub/uploads/figma/admin4.PNG" width="720" alt="관리자4">
+  <img src="./durudurub/uploads/figma/admin4.PNG" width="720" alt="관리자4"><br>
+  <img src="./durudurub/uploads/figma/admin5.PNG" width="720" alt="관리자4"><br>
+  <img src="./durudurub/uploads/figma/admin6.PNG" width="720" alt="관리자4"><br>
+  <img src="./durudurub/uploads/figma/admin7.PNG" width="720" alt="관리자4">
 </details>
 <br>
 
