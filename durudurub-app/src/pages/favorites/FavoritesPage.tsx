@@ -1,4 +1,4 @@
-import { Heart, ArrowLeft, Users, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { Star, ArrowLeft, Users, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface FavoritesPageProps {
@@ -18,11 +18,15 @@ interface FavoritesPageProps {
   onExploreClick?: () => void;
 }
 
+type Category = {
+  name: string;
+};
+
 interface Community {
   no: number;
   title: string;
   description: string;
-  category: string;
+  category: Category;
   location: string;
   hostId: string;
   hostName: string;
@@ -120,7 +124,7 @@ export function FavoritesPage({
         ) : favorites.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-gray-100">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-10 h-10 text-gray-400" />
+              <Star className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               즐겨찾기한 모임이 없습니다
@@ -148,10 +152,10 @@ export function FavoritesPage({
               {favorites.map((community) => (
                 <div
                   key={community.no}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full"
                 >
                   {/* 데스크톱 버전 - 세로형 레이아웃 */}
-                  <div className="hidden md:block">
+                  <div className="hidden md:flex flex-col h-full">
                     {/* 커뮤니티 이미지 */}
                     <div className="relative h-48 bg-gradient-to-br from-[#00A651] to-[#008f46]">
                       {community.thumbnailImg ? (
@@ -170,15 +174,15 @@ export function FavoritesPage({
                         onClick={() => handleRemoveFavorite(community.no)}
                         className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors shadow-lg"
                       >
-                        <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                       </button>
                     </div>
 
                     {/* 커뮤니티 정보 */}
-                    <div className="p-6">
+                    <div className="p-6 flex flex-col flex-1">
                       <div className="mb-4">
                         <span className="inline-block px-3 py-1 bg-[#00A651]/10 text-[#00A651] rounded-full text-sm font-medium mb-3">
-                          {community.category}
+                          {community.category?.name}
                         </span>
                         <h3 className="text-xl font-bold text-gray-900 mb-2">
                           {community.title}
@@ -188,7 +192,7 @@ export function FavoritesPage({
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4 mt-auto">
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
                           <span>
@@ -227,7 +231,7 @@ export function FavoritesPage({
                         onClick={() => handleRemoveFavorite(community.no)}
                         className="absolute top-1 right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md"
                       >
-                        <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       </button>
                     </div>
 
@@ -236,7 +240,7 @@ export function FavoritesPage({
                       {/* 상단: 제목과 설명 */}
                       <div>
                         <span className="inline-block px-2 py-0.5 bg-[#00A651]/10 text-[#00A651] rounded-full text-[10px] font-medium mb-1">
-                          {community.category}
+                          {community.category?.name}
                         </span>
                         <h3 className="font-bold text-gray-900 text-sm line-clamp-1 mb-1">
                           {community.title}
