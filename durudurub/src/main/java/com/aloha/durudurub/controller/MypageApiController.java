@@ -1,5 +1,33 @@
 package com.aloha.durudurub.controller;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.aloha.durudurub.dto.Club;
 import com.aloha.durudurub.dto.HostClubresponse;
 import com.aloha.durudurub.dto.Subscription;
@@ -8,28 +36,11 @@ import com.aloha.durudurub.service.ClubService;
 import com.aloha.durudurub.service.LikeService;
 import com.aloha.durudurub.service.SubscriptionService;
 import com.aloha.durudurub.service.UserService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 
 
@@ -381,5 +392,46 @@ public class MypageApiController {
         log.info("****************favoriteClubs: {}", favoriteClubs);
 
         return ResponseEntity.ok(favoriteClubs);
+    }
+
+    // ==================토스 페이먼츠 : 구독 상태 동기화
+    @GetMapping("/api/subscription")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getSubscriptionStatus(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userService.selectByUserId(principal.getName());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Subscription subscription = subscriptionService.selectByUserNo(user.getNo());
+
+        boolean isPremium = false;
+        Date endDate = null;
+        Integer subscriptionUserNo = null;
+        String subscriptionStatus = null;
+
+        if (subscription != null) {
+            subscriptionUserNo = subscription.getUserNo();
+            subscriptionStatus = subscription.getStatus();
+            endDate = subscription.getEndDate();
+
+            boolean isActiveStatus = "ACTIVE".equalsIgnoreCase(subscription.getStatus());
+            boolean isMatchedUser = subscription.getUserNo() == user.getNo();
+            isPremium = isActiveStatus && isMatchedUser;
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userNo", user.getNo());
+        response.put("subscriptionUserNo", subscriptionUserNo);
+        response.put("subscriptionStatus", subscriptionStatus);
+        response.put("isPremium", isPremium);
+        response.put("status", subscription != null ? subscription.getStatus() : null);
+        response.put("endDate", endDate != null ? endDate.toInstant().toString() : null);
+
+        return ResponseEntity.ok(response);
     }
 }

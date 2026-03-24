@@ -38,16 +38,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService{
         // 읽기 전용 에러
         Map<String,Object> attributes = new HashMap<>(oAuth2User.getAttributes());
 
-        // provider 별 정보 파싱
-        OAuth2UserInfo userInfo;
+        // 2. Factory 적용
+        OAuth2UserInfo userInfo =
+            OAuth2UserInfoFactory.get(provider, attributes);
 
-        if (provider.equals("google")) {
-            userInfo = new GoogleUserInfo(attributes);
-        } else if (provider.equals("naver")) {
-            userInfo = new NaverUserInfo(attributes);
-        } else {
-            userInfo = new KakaoUserInfo(attributes);
-        }
+        // 1. provider 별 정보 파싱
+        // OAuth2UserInfo userInfo;
+
+        // if (provider.equals("google")) {
+        //     userInfo = new GoogleUserInfo(attributes);
+        // } else if (provider.equals("naver")) {
+        //     userInfo = new NaverUserInfo(attributes);
+        // } else {
+        //     userInfo = new KakaoUserInfo(attributes);
+        // }
 
         // DB 회원 확인
         user = userService.findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId()); 
