@@ -31,16 +31,9 @@ public class AdminApiController {
     private final BannerService bannerService;
     private final NoticeService noticeService;
     private final CategoryService categoryService;
-    
-    // index (공통)
-    @GetMapping("")
-    public String admin() {
-        return "admin/index";
-    }
 
     // dashboard (조각)
     @GetMapping("/dashboard")
-    @ResponseBody
     public ResponseEntity<Map<String, Object>> dashboard() {
 
         Map<String, Object> result = new HashMap<>();
@@ -113,14 +106,12 @@ public class AdminApiController {
 
     // 사용자 관리 (json)
     @GetMapping("/users")
-    @ResponseBody
     public ResponseEntity<List<AdminSubscription>> usersData() {
         return ResponseEntity.ok(userService.userList());
     }
 
     // 사용자 삭제
     @DeleteMapping("/users/{userNo}")
-    @ResponseBody
     public int deleteUser(@PathVariable("userNo") int userNo) {
         return userService.delete(userNo);
     }
@@ -134,14 +125,12 @@ public class AdminApiController {
 
     // 모임 관리 (json)
     @GetMapping("/clubs")
-    @ResponseBody
     public ResponseEntity<List<Club>> clubsData() {
         return ResponseEntity.ok(clubService.list());
     }
 
     // 모임 삭제
     @DeleteMapping("/clubs/{clubNo}")
-    @ResponseBody
     public int deleteClub(@PathVariable("clubNo") int clubNo) {
         return clubService.delete(clubNo);
     }
@@ -154,7 +143,6 @@ public class AdminApiController {
 
     // 신고 관리 (json)
     @GetMapping("/reports")
-    @ResponseBody
     public ResponseEntity<List<UserBan>> reportsData() {
         reportService.deleteExpired();
         return ResponseEntity.ok(reportService.listByTarget());
@@ -162,7 +150,6 @@ public class AdminApiController {
 
     // 신고 - 6회 이상 빨간뱃지 (유저 직접 삭제)
     @DeleteMapping("/reports/{userNo}")
-    @ResponseBody
     public int deleteReports(@PathVariable("userNo") int userNo) {
         return userService.delete(userNo);
     }
@@ -175,14 +162,12 @@ public class AdminApiController {
     }
     // 배너 관리 (리스트)
     @GetMapping("/banners")
-    @ResponseBody
     public ResponseEntity<List<Banner>> bannerData() throws Exception {
         return ResponseEntity.ok(bannerService.bannerList());
     }
 
     // 배너 추가 (모달)
     @PostMapping("/banners/{insert}")
-    @ResponseBody
     public int createdBanner(
         Banner banner,
         @RequestParam(value = "imageFile", required = false) MultipartFile imageFile
@@ -193,7 +178,6 @@ public class AdminApiController {
     }
     // 배너 수정 (모달)
     @PutMapping("/banners/{no}")
-    @ResponseBody
     public int updatedBanner(
         Banner banner,
         @PathVariable("no") Integer no,
@@ -205,7 +189,6 @@ public class AdminApiController {
     }
     // 배너 삭제 (모달)
     @DeleteMapping("/banners/{no}/delete")
-    @ResponseBody
     public int deleteBanner (
         @PathVariable("no") int no
     ) throws Exception {
@@ -213,7 +196,6 @@ public class AdminApiController {
     }
     // 배너 위치 뱃지
     @PatchMapping("/banners/{no}/active")
-    @ResponseBody
     public int updateBannerActive (
         @PathVariable("no") Integer no,
         @RequestBody Map<String, String> body
@@ -225,7 +207,6 @@ public class AdminApiController {
 
     // 배너 활성화 뱃지
     @PatchMapping("/banners/{no}/position")
-    @ResponseBody
     public int updateBannerPosition (
         @PathVariable("no") Integer no,
         @RequestBody Map<String, String> body
@@ -244,7 +225,6 @@ public class AdminApiController {
 
     // 카테고리 리스트 조회
     @GetMapping("/categories")
-    @ResponseBody
     public ResponseEntity<List<Category>> categoriesList() throws Exception {
         List<Category> categories = categoryService.list();
         return ResponseEntity.ok(categories);
@@ -252,7 +232,6 @@ public class AdminApiController {
 
     // 대분류 추가
     @PostMapping(value = "/categories/create", consumes = "multipart/form-data")
-    @ResponseBody
     public int createdCategories(
             @ModelAttribute Category category,
             @RequestPart(value = "iconFile", required = false) MultipartFile iconFile
@@ -261,7 +240,6 @@ public class AdminApiController {
     }
     // 대분류 수정
     @PutMapping(value = "/categories/{no}/update", consumes = "multipart/form-data")
-    @ResponseBody
     public int updatedCategories(
             @PathVariable("no") int no,
             @ModelAttribute Category category,
@@ -272,7 +250,6 @@ public class AdminApiController {
     }
     // 대분류 삭제
     @DeleteMapping("/categories/{no}")
-    @ResponseBody
     public int deletedCategories (
         @PathVariable("no") int no
     ) throws Exception {
@@ -280,7 +257,6 @@ public class AdminApiController {
     }
     // 소분류 추가
     @PostMapping("/categories/{categoryNo}/subs")
-    @ResponseBody
     public int createdSub (
         @PathVariable("categoryNo") int categoryNo,
         @RequestBody SubCategory sub
@@ -290,7 +266,6 @@ public class AdminApiController {
     }
     // 소분류 삭제
     @DeleteMapping("/categories/subs/{no}")
-    @ResponseBody
     public int deletedSub (
         @PathVariable("no") int no 
     ) throws Exception{
@@ -306,7 +281,6 @@ public class AdminApiController {
     }
 
     @PostMapping("/notice/create")
-    @ResponseBody
     public int createdNotice(
         @RequestBody Notice notice,
         Principal principal
@@ -329,7 +303,6 @@ public class AdminApiController {
     }
 
     @PutMapping("/notice/{noticeNo}/update")
-    @ResponseBody
     public int updatedNotice(
         @PathVariable("noticeNo") int noticeNo,
         @RequestBody Notice notice
@@ -341,7 +314,6 @@ public class AdminApiController {
     }
     // 삭제
     @DeleteMapping("/notice/{noticeNo}")
-    @ResponseBody
     public int deleteNotice(
         @PathVariable("noticeNo") int noticeNo
     ) throws Exception {

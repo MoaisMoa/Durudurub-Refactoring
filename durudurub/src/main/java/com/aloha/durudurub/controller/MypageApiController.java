@@ -16,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -59,33 +57,7 @@ public class MypageApiController {
     
     private final SubscriptionService subscriptionService;
     
-    // 마이페이지 메인
-    // user_id 조회
-    @GetMapping("")
-    public String mypagePage(
-        Model model, 
-        Principal principal
-    ) throws Exception {
-        if (principal != null) {
-            User user = userService.selectByUserId(principal.getName());
-            int userNo = user.getNo();
-            int totalMyClub = clubService.countByUser(userNo);
-            int totalFavorite = likeService.countClubLikeByUser(userNo);
-            
-            model.addAttribute("user", user);
-            model.addAttribute("totalMyClub", totalMyClub);
-            model.addAttribute("totalFavorite", totalFavorite);
-
-            if (user != null) {
-                Subscription subscription = subscriptionService.selectByUserNo(user.getNo());
-                model.addAttribute("subscription", subscription);
-            }
-        }
-        return "mypage/mypage";
-    }
-
     @GetMapping("/userinfo")
-    @ResponseBody
     public ResponseEntity<Map<String, Object>> userInfo(
             Principal principal
     ) throws Exception {
@@ -107,7 +79,6 @@ public class MypageApiController {
     // 회원 정보 수정 (비동기)
     // ⭐ 사진 업로드 포함!
     @PostMapping(value={"/userUpdate"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseBody
     public ResponseEntity<Map<String, String>> mypageUpdate(
         @RequestParam("username") String username,
         @RequestParam(value = "age", required = false, defaultValue = "0") int age,
@@ -197,7 +168,6 @@ public class MypageApiController {
 
     // 회원 탈퇴 모달
     @DeleteMapping("/delete")
-    @ResponseBody
     public ResponseEntity<Void> deleteUser(
         Principal principal,
         HttpServletRequest request,
@@ -218,7 +188,6 @@ public class MypageApiController {
     // 내모임 관리
     // club index (공통)
     @GetMapping("/club")
-    @ResponseBody
     public ResponseEntity<Map<String, Object>> clubPage(
         Principal principal
     ) throws Exception {
@@ -240,7 +209,6 @@ public class MypageApiController {
 
     // 가입 중인 모임 (조각)
     @GetMapping("/club/approvedClub")
-    @ResponseBody
     public ResponseEntity<List<Club>> approvedClub(
         Principal principal
     ) throws Exception {
@@ -252,7 +220,6 @@ public class MypageApiController {
     }
     // 가입 중인 모임 - 탈퇴
     @DeleteMapping("/club/{clubNo}")
-    @ResponseBody
     public int deleteApprovedClub (
         @PathVariable("clubNo") int clubNo,
         Principal principal
@@ -265,7 +232,6 @@ public class MypageApiController {
 
     // 리더인 모임 (조각)
     @GetMapping("/club/hostClub")
-    @ResponseBody
     public ResponseEntity<List<HostClubresponse>> hostClub(
         Principal principal
     ) {
@@ -289,7 +255,6 @@ public class MypageApiController {
     }
     // 모임 삭제 - 리더
     @DeleteMapping("/club/hostClub/{clubNo}")
-    @ResponseBody
     public ResponseEntity<?> deleteClub (
         @PathVariable("clubNo") int clubNo
     ) throws Exception{
@@ -302,7 +267,6 @@ public class MypageApiController {
     }
     // 모임 승인 - 리더
     @PutMapping("/club/hostClub/{clubNo}/members/{userNo}/approved")
-    @ResponseBody
     public ResponseEntity<?> approved (
         @PathVariable("clubNo") int clubNo, 
         @PathVariable("userNo") int userNo
@@ -316,7 +280,6 @@ public class MypageApiController {
     }
     // 모임 거부 - 리더
     @DeleteMapping("/club/hostClub/{clubNo}/members/{userNo}/reject")
-    @ResponseBody
     public ResponseEntity<?> rejectMember(
             @PathVariable("clubNo") int clubNo,
             @PathVariable("userNo") int userNo
@@ -330,7 +293,6 @@ public class MypageApiController {
     }
     // 모임 추방 - 리더
     @DeleteMapping("/club/hostClub/{clubNo}/members/{userNo}/remove")
-    @ResponseBody
     public ResponseEntity<?> removeMember(
             @PathVariable("clubNo")  int clubNo,
             @PathVariable("userNo")  int userNo
@@ -347,7 +309,6 @@ public class MypageApiController {
 
     // 신청 중인 모임 (조각)
     @GetMapping("/club/pendingClub")
-    @ResponseBody
     public ResponseEntity<List<Club>> pendingClub(Principal principal) throws Exception {
 
         User user = userService.selectByUserId(principal.getName());
@@ -361,7 +322,6 @@ public class MypageApiController {
     // 신청 취소
     // 신청 중인 모임 - 신청 취소
     @DeleteMapping("/club/pendingClub/{clubNo}")
-    @ResponseBody
     public ResponseEntity<?> cancelPending(
         @PathVariable("clubNo") int clubNo,
         Principal principal
@@ -378,7 +338,6 @@ public class MypageApiController {
     //------------------------------
     // 즐겨찾기
     @GetMapping("/favorites")
-    @ResponseBody
     public ResponseEntity<List<Club>> favorites(
         Principal principal
     ) throws Exception{
@@ -405,7 +364,6 @@ public class MypageApiController {
 
     // ==================토스 페이먼츠 : 구독 상태 동기화
     @GetMapping("/api/subscription")
-    @ResponseBody
     public ResponseEntity<Map<String, Object>> getSubscriptionStatus(Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

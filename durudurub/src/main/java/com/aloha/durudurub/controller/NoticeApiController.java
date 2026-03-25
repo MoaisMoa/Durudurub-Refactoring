@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aloha.durudurub.dto.Notice;
@@ -28,7 +27,6 @@ public class NoticeApiController {
 
     // 목록
     @GetMapping("")
-    @ResponseBody
     public List<Notice> noticeList() 
     {
         return noticeService.getNoticeList();
@@ -36,7 +34,6 @@ public class NoticeApiController {
     
     // 상세보기
     @GetMapping("/{noticeNo}")
-    @ResponseBody
     public Notice getNotice(
         @PathVariable("noticeNo") int noticeNo
     ) {
@@ -46,7 +43,6 @@ public class NoticeApiController {
 
     // 상세보기 - api
     @GetMapping("/api/{noticeNo}")
-    @ResponseBody
     public Notice getNoticeDetail(@PathVariable int noticeNo) {
         return noticeService.getNotice(noticeNo);
     }

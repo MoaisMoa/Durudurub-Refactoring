@@ -257,37 +257,48 @@ export function CommunityDetailPage({
 
   // 게시글 섹션에 도달했을 때 광고 표시
   useEffect(() => {
-    // 관리자이거나 프리미엄 구독자는 광고를 보지 않음
+    // ⭐ 1. 조건 체크
     const isAdmin = user?.isAdmin || user?.userId === 'admin';
-    const isPremium = user?.isPremium || false;
-    
-    if (isAdmin || isPremium) {
-      return; // 광고를 표시하지 않음
-    }
+    const isPremium = user?.isPremium === true;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !adShown) {
-            setShowAdModal(true);
-            setAdShown(true);
-          }
-        });
-      },
-      {
-        threshold: 0.1, // 게시글 섹션의 10%가 보일 때 트리거
+    if (isAdmin || isPremium) return;
+
+    // ⭐ 2. DOM 렌더 보장 (핵심)
+    const timer = setTimeout(() => {
+      if (!postsRef.current) {
+        console.log("❌ postsRef 없음");
+        return;
       }
-    );
 
-    if (postsRef.current) {
+      console.log("✅ observer 연결됨");
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            console.log("intersection:", entry.isIntersecting);
+
+            if (entry.isIntersecting && !adShown) {
+              console.log("🔥 광고 실행");
+              setShowAdModal(true);
+              setAdShown(true);
+            }
+          });
+        },
+        {
+          threshold: 0.1, // ⭐ 유지
+        }
+      );
+
       observer.observe(postsRef.current);
-    }
 
-    return () => {
-      if (postsRef.current) {
-        observer.unobserve(postsRef.current);
-      }
-    };
+      // cleanup
+      return () => {
+        observer.disconnect();
+      };
+    }, 100); // ⭐ 핵심 포인트
+
+    return () => clearTimeout(timer);
+
   }, [adShown, user]);
 
   // 컴포넌트 마운트 시 멤버십 상태 조회

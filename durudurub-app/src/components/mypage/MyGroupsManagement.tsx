@@ -170,29 +170,42 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
     }
   };
 
-  const handleRemoveMember = async (groupNo: number, memberId: number, memberName: string) => {
-    try {
-      const token = sessionStorage.getItem('accessToken');
+  const handleRemoveMember = (groupNo: number, memberId: number, memberName: string) => {
+  setConfirmModal({
+    isOpen: true,
+    type: 'remove',
+    groupNo,
+    memberId,
+    memberName,
+  });
+};
 
-      const res = await fetch(
-        `/api/users/mypage/club/hostClub/${groupNo}/members/${memberId}/remove`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+  const handleRemoveMemberApi = async (
+  groupNo: number,
+  memberId: number,
+  memberName: string
+) => {
+  try {
+    const token = sessionStorage.getItem('accessToken');
+
+    const res = await fetch(
+      `/api/users/mypage/club/hostClub/${groupNo}/members/${memberId}/remove`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      );
+      }
+    );
 
-      if (!res.ok) throw new Error('추방 실패');
+    if (!res.ok) throw new Error("추방 실패");
 
-      // ⭐ 추천: 다시 조회
-      loadLeaderGroups();
+    loadLeaderGroups();
 
-    } catch (error) {
-      console.error('추방 실패:', error);
-    }
-  };
+  } catch (error) {
+    console.error("추방 실패:", error);
+  }
+};
 
   const handleDeleteGroup = async (
     groupNo: number, groupName: string
@@ -329,6 +342,8 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
     onCommunityClick?.(club.no);
   };
 
+  
+
   return (
     <div key={club.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       <div
@@ -356,7 +371,13 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
         <button
           onClick={(e) => {
             e.stopPropagation();
-            handleLeaveGroup(club.no, club.title);
+            setConfirmModal({
+              isOpen: true,
+              type: 'remove',
+              groupNo: club.no,
+              memberId: null, // ⭐ 탈퇴는 null
+              memberName: club.title
+            });
           }}
           className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
@@ -412,7 +433,16 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
           <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
             {showLeaveButton && (
               <button
-                onClick={() => handleLeaveGroup(group.club.no, group.club.title)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmModal({
+                  isOpen: true,
+                  type: 'remove',
+                  groupNo: group.club.no,
+                  memberId: null, // ⭐ 탈퇴는 null
+                  memberName: group.club.title
+                });
+              }}
                 className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -429,7 +459,13 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                   {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 <button
-                  onClick={() => handleDeleteGroup(group.club.no, group.club.title)}
+                   onClick={() => setConfirmModal({
+                                    isOpen: true,
+                                    type: 'deleteGroup',
+                                    groupNo: group.club.no,
+                                    memberId: null,
+                                    memberName: group.club.title
+                                  })}
                   className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -462,14 +498,26 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleApproveMember(group.club.no, member.user.no, member.user.username)}
+                          onClick={() => setConfirmModal({
+                                            isOpen: true,
+                                            type: 'approve',
+                                            groupNo: group.club.no,
+                                            memberId: member.user.no,
+                                            memberName: member.user.username
+                                          })}
                           className="flex items-center gap-1 px-3 py-1.5 bg-[#00A651] text-white text-sm rounded-lg hover:bg-[#008f46] transition-colors"
                         >
                           <UserCheck className="w-4 h-4" />
                           승인
                         </button>
                         <button
-                          onClick={() => handleRejectMember(group.club.no, member.user.no, member.user.username)}
+                          onClick={() => setConfirmModal({
+                                            isOpen: true,
+                                            type: 'reject',
+                                            groupNo: group.club.no,
+                                            memberId: member.user.no,
+                                            memberName: member.user.username
+                                          })}
                           className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
                         >
                           <UserX className="w-4 h-4" />
@@ -763,79 +811,66 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                 취소
               </button>
               <button
-                onClick={() => {
-                  if (confirmModal.type === 'approve') {
-                    // 멤버 승인
-                    setLeaderGroups(prevGroups =>
-                      prevGroups.map(group => {
-                        if (group.club.no === confirmModal.groupNo) {
-                          return {
-                            ...group,
-                            members: group.approvedMembers?.map(member => 
-                              member.user.no === confirmModal.memberId 
-                                ? { ...member, status: 'approved' as const } 
-                                : member
-                            )
-                          };
-                        }
-                        return group;
-                      })
-                    );
-                    toast.success('멤버 승인이 완료되었습니다.');
-                  } else if (confirmModal.type === 'reject') {
-                    // 멤버 거부 - 리스트에서 제거
-                    setLeaderGroups(prevGroups =>
-                      prevGroups.map(group => {
-                        if (group.club.no === confirmModal.groupNo) {
-                          return {
-                            ...group,
-                            members: group.approvedMembers?.filter(member => member.user.no !== confirmModal.memberId)
-                          };
-                        }
-                        return group;
-                      })
-                    );
-                    toast.error('가입 신청이 거부되었습니다.');
-                  } else if (confirmModal.type === 'remove') {
-                    if (confirmModal.memberId === null) {
-                      // 모임 탈퇴 - 리스트에서 해당 모임 제거
-                      setJoinedGroups(prevGroups => 
-                        prevGroups.filter(club => club.no !== confirmModal.groupNo)
+                onClick={async () => {
+                  try {
+                    if (confirmModal.type === 'approve') {
+                      await handleApproveMember(
+                        confirmModal.groupNo!,
+                        confirmModal.memberId!,
+                        confirmModal.memberName!
                       );
-                      toast.success('모임에서 탈퇴했습니다.');
-                    } else {
-                      // 멤버 내보내기 - 해당 멤버 제거
-                      setLeaderGroups(prevGroups =>
-                        prevGroups.map(group => {
-                          if (group.club.no === confirmModal.groupNo) {
-                            return {
-                              ...group,
-                              members: group.approvedMembers?.filter(member => member.user.no !== confirmModal.memberId),
-                              memberCount: group.club.currentMembers - 1
-                            };
-                          }
-                          return group;
-                        })
+                      toast.success('멤버 승인이 완료되었습니다.');
+
+                    } else if (confirmModal.type === 'reject') {
+                      await handleRejectMember(
+                        confirmModal.groupNo!,
+                        confirmModal.memberId!,
+                        confirmModal.memberName!
                       );
-                      toast.success('멤버를 내보냈습니다.');
+                      toast.error('가입 신청이 거부되었습니다.');
+
+                    } else if (confirmModal.type === 'remove') {
+
+                      if (confirmModal.memberId === null) {
+                        await handleLeaveGroup(
+                          confirmModal.groupNo!,
+                          confirmModal.memberName!
+                        );
+                        toast.success('모임에서 탈퇴했습니다.');
+                      } else {
+                        await handleRemoveMemberApi(
+                          confirmModal.groupNo!,
+                          confirmModal.memberId!,
+                          confirmModal.memberName!
+                        );
+                        console.log("추방 API 필요");
+                        toast.success('멤버를 내보냈습니다.');
+                      }
+
+                    } else if (confirmModal.type === 'deleteGroup') {
+                      await handleDeleteGroup(
+                        confirmModal.groupNo!,
+                        confirmModal.memberName!
+                      );
+                      toast.success('모임이 삭제되었습니다.');
+
+                    } else if (confirmModal.type === 'cancelRequest') {
+                      await cancelPending(confirmModal.groupNo!);
+                      toast.success('가입 신청이 취소되었습니다.');
                     }
-                  } else if (confirmModal.type === 'deleteGroup') {
-                    // 모임 삭제 - 리스트에서 해당 모임 제거
-                    setLeaderGroups(prevGroups => 
-                      prevGroups.filter(group => group.club.no !== confirmModal.groupNo)
-                    );
-                    toast.success('모임이 삭제되었습니다.');
-                  } else if (confirmModal.type === 'cancelRequest') {
-                    // 가입 신청 취소 - 리스트에서 해당 모임 제거
-                    setPendingGroups(prevGroups => 
-                      prevGroups.filter(club => club.no !== confirmModal.groupNo)
-                    );
-                    if (confirmModal.groupNo) {
-                      cancelPending(confirmModal.groupNo);
-                    }
-                    toast.success('가입 신청이 취소되었습니다.');
+
+                  } catch (error) {
+                    console.error(error);
+                    toast.error('작업 실패');
                   }
-                  setConfirmModal({ isOpen: false, type: null, groupNo: null, memberId: null, memberName: null });
+
+                  setConfirmModal({
+                    isOpen: false,
+                    type: null,
+                    groupNo: null,
+                    memberId: null,
+                    memberName: null
+                  });
                 }}
                 className={`flex-1 px-4 py-3 text-white rounded-lg font-medium transition-colors ${
                   confirmModal.type === 'approve'

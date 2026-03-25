@@ -373,13 +373,13 @@ INSERT IGNORE INTO club_members (club_no, user_no, status) VALUES
 -- 샘플 배너
 -- /uploads/banners 파일로 변경!
 INSERT INTO `banners` (`title`, `image_url`, `link_url`, `position`, `seq`) VALUES
-('두루두루 오픈 기념', '/uploads/banners/durudurub-open.png', '/notice', 'MAIN', 1),
-('케이크 먹고 싶어요', '/uploads/banners/cafe_banner.png', '/club/list', 'POPUP', 2),
-('모임을 만들어보세요!', '/uploads/banners/durudurub-newClub.png', '/club/create', 'MAIN', 3),
-('스테이크 사주세요', '/uploads/banners/restaurant_banner.png', '/club/list', 'MAIN', 4),
-('작은 핸드폰 원하세요?', '/uploads/banners/smartphone_banner.png', '/club/list', 'POPUP', 5),
-('프리미엄 50%', '/uploads/banners/durudurub-premium.png', '/users/mypage', 'MAIN', 6),
-('로또 당첨되면 바로 뜨자', '/uploads/banners/travel_air_banner.png', '/club/list', 'POPUP', 7);
+('두루두루 오픈 기념', '/uploads/banners/durudurub-open.png', 'http://localhost:5173/', 'MAIN', 1),
+('케이크 먹고 싶어요', '/uploads/banners/cafe_banner.png', 'http://localhost:5173/', 'POPUP', 2),
+('모임을 만들어보세요!', '/uploads/banners/durudurub-newClub.png', 'http://localhost:5173/', 'MAIN', 3),
+('스테이크 사주세요', '/uploads/banners/restaurant_banner.png', 'http://localhost:5173/', 'MAIN', 4),
+('작은 핸드폰 원하세요?', '/uploads/banners/smartphone_banner.png', 'http://localhost:5173/', 'POPUP', 5),
+('프리미엄 50%', '/uploads/banners/durudurub-premium.png', 'http://localhost:5173/', 'MAIN', 6),
+('로또 당첨되면 바로 뜨자', '/uploads/banners/travel_air_banner.png', 'http://localhost:5173/', 'POPUP', 7);
 
 
 -- 샘플 공지사항

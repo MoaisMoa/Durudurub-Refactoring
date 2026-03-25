@@ -970,99 +970,6 @@ export function AdminPage({
     }  
   };
 
-//   const savedCategory = async () => {
-//   if (!categoryFormData.name.trim()) return;
-
-//   const isDuplicate = categories.some(
-//     c => c.name === categoryFormData.name && c.no !== selectedCategory?.no
-//   );
-
-//   if (isDuplicate) {
-//     setShowToast(true);
-//     setToastMessage('이미 존재하는 카테고리 이름입니다.');
-
-//     setTimeout(() => setShowToast(false), 2000); 
-
-//     return;
-//   }
-
-//   const token = sessionStorage.getItem('accessToken');
-
-//   try {
-//     let url = '';
-//     let method = '';
-//     let body: BodyInit;
-//     let headers: Record<string, string> = {
-//       Authorization: `Bearer ${token}`,
-//     };
-
-//     if (categoryFormData.parentId && !selectedCategory) {
-//       url = `/api/admin/categories/${categoryFormData.parentId}/subs`;
-//       method = 'POST';
-
-//       headers['Content-Type'] = 'application/json';
-
-//       body = JSON.stringify({
-//         name: categoryFormData.name,
-//         description: categoryFormData.description,
-//       });
-//     }
-//     else if (selectedCategory && !selectedCategory.parentId) {
-//       url = `/api/admin/categories/${selectedCategory.no}/update`;
-//       method = 'PUT';
-
-//       const formData = new FormData();
-//       formData.append("name", categoryFormData.name);
-//       formData.append("description", categoryFormData.description);
-
-//       if (iconFile) {
-//         formData.append("iconFile", iconFile);
-//       }
-
-//       body = formData;
-    
-//     } else {
-//       url = `/api/admin/categories/create`;
-//       method = 'POST';
-
-//       const formData = new FormData();
-//       formData.append("name", categoryFormData.name);
-//       formData.append("description", categoryFormData.description);
-
-//       if (iconFile) {
-//         formData.append("iconFile", iconFile);
-//       }
-
-//       body = formData;
-//     }
-
-//     const response = await fetch(url, {
-//       method,
-//       headers,
-//       body,
-//     });
-
-//     if (!response.ok) {
-//       console.error('savedCategory Fail:', await response.text());
-//       return;
-//     }
-    
-//     const data = await response.json();
-
-//     setToastMessage(
-//       selectedCategory ? '카테고리 수정 완료' : '카테고리 추가 완료'
-//     );
-//     setShowToast(true); 
-//     setTimeout(() => setShowToast(false), 2000); 
-
-//   } catch (error) {
-//     console.error("카테고리 추가/수정 실패......", error);
-//   }
-  
-//   loadCategories();
-//   setShowCategoryModal(false);
-// };
-
 const savedCategory = async () => {
   if (!categoryFormData.name.trim()) return;
 
@@ -1274,12 +1181,6 @@ const handleDeleteCategory = async () => {
       r.reason.toLowerCase().includes(searchTerm.toLowerCase())
   );
   console.log("filteredReports>>>> ", filteredReports);
-
-  // 신고 당한 횟수 계산 함수
-  // const getReportCount = (userId?: string) => {
-  //   if (!userId) return 0;
-  //   return reports.filter(r => r.user.userId === userId).length;
-  // };
 
   // ��한 변경 함수
   const handleToggleSubscription = (userId: number) => {
