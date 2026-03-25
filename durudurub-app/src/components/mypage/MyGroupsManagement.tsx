@@ -170,14 +170,28 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
     }
   };
 
-  const handleRemoveMember = (groupNo: number, memberId: number, memberName: string) => {
-    setConfirmModal({
-      isOpen: true,
-      type: 'remove',
-      groupNo: groupNo,
-      memberId: memberId,
-      memberName: memberName,
-    });
+  const handleRemoveMember = async (groupNo: number, memberId: number, memberName: string) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+
+      const res = await fetch(
+        `/api/users/mypage/club/hostClub/${groupNo}/members/${memberId}/remove`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error('추방 실패');
+
+      // ⭐ 추천: 다시 조회
+      loadLeaderGroups();
+
+    } catch (error) {
+      console.error('추방 실패:', error);
+    }
   };
 
   const handleDeleteGroup = async (
