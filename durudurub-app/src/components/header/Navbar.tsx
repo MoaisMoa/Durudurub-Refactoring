@@ -528,20 +528,6 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
     setIsMobileMenuOpen(false);
   };
 
-  // 프로필 이미지 또는 닉네임 글자 렌더링
-  // const renderProfileIcon = () => {
-  //   if (profileImage) {
-  //     return (
-  //       <div
-  //         className="w-10 h-10 rounded-full bg-cover bg-center"
-  //         style={{ backgroundImage: `url(${profileImage})` }}
-  //       ></div>
-  //     );
-  //   } else {
-  //     return <User className="w-10 h-10" />;
-  //   }
-  // };
-
   // 관리자 계정 여부 확인
   const isAdmin = user?.isAdmin === true || user?.userId === 'admin';
 

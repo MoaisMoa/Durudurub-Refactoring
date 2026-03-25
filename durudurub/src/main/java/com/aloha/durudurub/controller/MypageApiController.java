@@ -28,10 +28,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.aloha.durudurub.dto.Category;
 import com.aloha.durudurub.dto.Club;
 import com.aloha.durudurub.dto.HostClubresponse;
 import com.aloha.durudurub.dto.Subscription;
 import com.aloha.durudurub.dto.User;
+import com.aloha.durudurub.service.CategoryService;
 import com.aloha.durudurub.service.ClubService;
 import com.aloha.durudurub.service.LikeService;
 import com.aloha.durudurub.service.SubscriptionService;
@@ -53,6 +55,7 @@ public class MypageApiController {
     private final UserService userService;
     private final ClubService clubService;
     private final LikeService likeService;
+    private final CategoryService categoryService;
     
     private final SubscriptionService subscriptionService;
     
@@ -388,6 +391,12 @@ public class MypageApiController {
         int userNo = user.getNo();
 
         List<Club> favoriteClubs= likeService.favoriteList(userNo);
+        for (Club club : favoriteClubs) {
+            if (club.getCategoryNo() != 0) {
+                Category category = categoryService.selectByNo(club.getCategoryNo());
+                club.setCategory(category);
+            }
+        }
 
         log.info("****************favoriteClubs: {}", favoriteClubs);
 

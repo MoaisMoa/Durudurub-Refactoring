@@ -1,5 +1,6 @@
 import { ArrowLeft, User, Mail, Calendar, MapPin, Edit2, Heart, Users, AlertTriangle, Crown, Sparkles, Compass } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useApp } from '@/contexts/AppContext';
 
 interface MyPageProps {
   onBack: () => void;
@@ -44,6 +45,9 @@ export function MyPage({
   const [totalMyClub, setTotalMyClub] = useState<number>(0);
   const [totalFavorite, setTotalFavorite] = useState<number>(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imgError, setImgError] = useState(false);
+  const { setUser } = useApp();
+  
 
   const resolveProfileImageUrl = (image: string | null | undefined) => {
     if (!image) return null;
@@ -76,6 +80,37 @@ export function MyPage({
 
   fetchUser();
 }, []);
+
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      const token = sessionStorage.getItem('accessToken');
+
+      const res = await fetch('/api/users/mypage/api/subscription', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      console.log("subscription:", data);
+
+      setUser((prevUser) => {
+        if (!prevUser) return prevUser;
+
+        const nextUser = {
+          ...prevUser,
+          isPremium: data.isPremium,
+          premiumEndDate: data.endDate,
+        };
+
+        sessionStorage.setItem('user', JSON.stringify(nextUser));
+        return nextUser;
+      });
+    };
+
+    fetchSubscription();
+  }, []);
 
   // 성별 영어 -> 한글 변환 함수
   const convertGenderToKorean = (gender: string) => {
@@ -151,6 +186,11 @@ export function MyPage({
     });
   }, [userInfo]);
 
+  const cleanProfileImage =
+    profileImage && profileImage !== 'null'
+      ? profileImage.trim()
+      : '';
+
   const handleSave = async () => {
     try {
       const token = sessionStorage.getItem('accessToken');
@@ -207,6 +247,7 @@ export function MyPage({
       setImageFile(file); // ⭐ 실제 파일 저장
 
       reader.onloadend = () => {
+        setImgError(false);
         setProfileImage(reader.result as string);
         console.log("editedUser ::: ", editedUser);
       };
@@ -381,14 +422,16 @@ export function MyPage({
               <div className="space-y-4">
                 {/* 프로필 사진 */}
                 <div className="flex items-center">
-                  {profileImage ? (
-                    <div
-                      className="w-20 h-20 rounded-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${profileImage})` }}
-                    ></div>
+                  {cleanProfileImage !== '' && !imgError ? (
+                    <img
+                      src={cleanProfileImage}
+                      alt="profile"
+                      className="w-20 h-20 rounded-full object-cover"
+                      onError={() => setImgError(true)}
+                    />
                   ) : (
                     <div className={`w-20 h-20 bg-gradient-to-br rounded-full flex items-center justify-center text-white text-2xl font-bold ${profileGradientClass}`}>
-                      {editedUser.username.charAt(0)}
+                      {(editedUser.username || "?").charAt(0)}
                     </div>
                   )}
                   {isEditing && (
@@ -579,10 +622,7 @@ export function MyPage({
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
               <h3 className="text-lg font-bold text-gray-900 mb-4">계정 관리</h3>
               <button
-                onClick={() => {
-                  handleDelete();
-                  setShowDeleteModal(false);
-                }}
+                onClick={() => setShowDeleteModal(true)}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600"
               >
                 회원 탈퇴
@@ -595,7 +635,7 @@ export function MyPage({
       {/* 회원 탈퇴 모달 */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md mx-4">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-lg mx-4">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
                 <AlertTriangle className="w-8 h-8 text-red-600" />
