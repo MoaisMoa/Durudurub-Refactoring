@@ -49,7 +49,6 @@ export function PaymentPage({
       return;
     }
 
-    // 약관 동의 확인
     if (!agreeTerms || !agreePrivacy) {
       toast.error('약관 동의를 확인해주세요.');
       return;
@@ -57,7 +56,6 @@ export function PaymentPage({
 
     setIsProcessing(true);
 
-    // 결제 처리 시뮬레이션 (실제로는 결제 API 호출)
     try {
       const orderResponse = await api.post('/payments/order', {
         period: selectedPlanInfo.period,
@@ -71,7 +69,7 @@ export function PaymentPage({
 
       const tossPayments = await loadTossPayments(clientKey);
       const payment = tossPayments.payment({
-        customerKey: `durudurub_${user.userId || user.id || 'member'}`,
+        customerKey: `durudurub_${user.id}`,
       });
 
       await payment.requestPayment({
@@ -82,11 +80,10 @@ export function PaymentPage({
         },
         orderId,
         orderName,
-        // 여기 수정해야함!!!
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
-        customerEmail: user.email,
-        customerName: user.name || user.userId || '두루두룹 회원',
+        customerEmail: user.userId,
+        customerName: user.userName || '두루두룹 회원',
         card: {
           useEscrow: false,
           flowMode: 'DEFAULT',
