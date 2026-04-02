@@ -519,6 +519,14 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 </details>
 <br>
 
+### 결제 (구독)
+<details>
+  <summary>결제 화면 보기</summary>
+  
+  <img src="./durudurub/uploads/figma/payments.PNG" width="720" alt="결제">
+</details>
+<br>
+
 ### 모임 상세
 <details>
   <summary>모임 상세 화면 보기</summary>
@@ -559,13 +567,6 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 </details>
 <br>
 
-### 결제 (구독)
-<details>
-  <summary>결제 화면 보기</summary>
-  
-  <img src="./durudurub/uploads/figma/payments.PNG" width="720" alt="결제">
-</details>
-<br>
 
 ### 공지사항 페이지
 <details>
@@ -577,7 +578,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 </details>
 <br>
 
-### 관리자 페이지
+#### 관리자 페이지
 <details>
   <summary>관리자 페이지 화면 보기</summary>
   
