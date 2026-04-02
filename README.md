@@ -527,7 +527,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 </details>
 <br>
 
-### 모임 상세
+#### 모임 상세
 <details>
   <summary>모임 상세 화면 보기</summary>
   
@@ -536,7 +536,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 </details>
 <br>
 
-### AI 검색
+#### AI 검색
 <details>
   <summary>AI 검색 화면 보기</summary>
   
@@ -544,7 +544,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 </details>
 <br>
 
-### 로그인 / 회원가입
+#### 로그인 / 회원가입
 <details>
   <summary>로그인 / 회원가입 화면 보기</summary>
   
@@ -554,7 +554,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 </details>
 <br>
 
-### 마이페이지
+#### 마이페이지
 <details>
   <summary>마이페이지 화면 보기</summary>
   
@@ -568,7 +568,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 <br>
 
 
-### 공지사항 페이지
+#### 공지사항 페이지
 <details>
   <summary>공지사항 페이지 화면 보기</summary>
   
@@ -610,7 +610,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 
 **박희진**
 > - 결제 시스템을 처음 구현하며 결제 방식부터 요청, 응답 프로세스까지의 전체적인 흐름을 알게 되었습니다.
-> - 구현 과정에서 복잡한 결제 로직 처리에 대해 기술적으로 어려움이 있었지만, 이를 해결하며 서버와 클라이언트 간 데이터 흐름과 보안 처리의 중요성을 체감할 수 있었습니다.
+> - 구현 과정에서 복잡한 결제 로직 처리에 대해 기술적으로 어려움이 있었지만 이를 해결하며 서버와 클라이언트 간 데이터 흐름과 보안 처리의 중요성을 체감할 수 있었습니다.
 
 **최영우**
 > - 게시판, AI 검색 등 주요 기능을 REST API로 전환하며 프론트/백 분리 통신 구조를 이해했습니다.
