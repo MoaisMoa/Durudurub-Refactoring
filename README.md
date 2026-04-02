@@ -151,32 +151,8 @@
 </div>
 
 ### Architecture
-```
-durudurub/                          ← Spring Boot 백엔드 (REST API)
-├── src/main/java/.../
-│   ├── config/                     ← Security, Web, CORS 설정
-│   ├── controller/                 ← REST API 컨트롤러
-│   ├── dao/                        ← MyBatis Mapper 인터페이스
-│   ├── dto/                        ← 데이터 전송 객체
-│   ├── security/                   ← JWT 인증 필터 & 토큰 유틸
-│   └── service/                    ← 비즈니스 로직
-├── src/main/resources/
-│   ├── mybatis/mapper/             ← SQL 매퍼 XML
-│   └── application.properties      ← JWT 시크릿, DB 설정
-└── uploads/                        ← 업로드 파일 저장소
+![두룹두룹리액트아키텍처](https://github.com/user-attachments/assets/c5ef5bc6-cc97-469a-9b9f-c5d01673fa73)
 
-durudurub-app/                      ← React 프론트엔드 (Vite + TypeScript)
-├── src/
-│   ├── api/                        ← Axios API 호출 모듈
-│   ├── components/                 ← 공통 UI 컴포넌트 (Navbar 등)
-│   ├── contexts/                   ← AppContext (JWT 인증 상태 관리)
-│   ├── pages/                      ← 페이지별 컴포넌트
-│   ├── layouts/                    ← 레이아웃 컴포넌트
-│   ├── routes.tsx                  ← React Router 라우팅 설정
-│   └── App.tsx                     ← 앱 진입점
-├── package.json                    ← 의존성 관리
-└── vite.config.ts                  ← Vite 빌드 설정
-```
 
 ### 기존 프로젝트 대비 변경점
 | 구분 | 기존 (TeamProject1) | 리팩토링 (mini2) |
