@@ -94,7 +94,7 @@
 |:---:|:---:|:---|
 | **안영아** | 팀장 | • 프로젝트 총괄 및 일정 관리<br>• 사용자 및 관리자 페이지 REST API 연동<br>• OAuth 2.0 소셜 로그인 기능 구현 (카카오/네이버/구글)<br>• 프로젝트 깃허브 관리 |<br>•Thymeleaf → React 프론트/백 분리 기초 작업<br>
 | **김현수** | 팀원 | • 로그인/회원가입 페이지 구현 및 JWT 인증 방식 전환<br>• 권한 부여 및 데이터 검증<br>• 각종 정의서 작성 및 검증<br>• 유저 데이터 권한 부여 및 패스 구현 |
-| **박희진** | 팀원 | • Figma AI Make 화면 설계 및 UI 구성<br>• 카테고리 필터·리스트 구현<br>• 결제 모듈 탑재 및 구현 (토스페이먼츠 API 활용) |
+| **박희진** | 팀원 | • Figma AI Make 화면 설계 및 UI 구성<br>• 카테고리 필터·리스트 구현<br>• 결제 모듈 탑재 및 구현 (토스페이먼츠 API 활용) | <br>•미니게임 UI 개발 및 애니메이션 구현
 | **최영우** | 팀원 | • 게시판 / AI 검색 기능 REST API 구현<br>• DB 설계 및 수정<br>• 발표, 문서화 및 코드 리팩토링 |
 
 > 💡 인원 : **4명 (팀 리팩토링)** &nbsp;|&nbsp; 기간 : **2026.02 ~ 2026.03**
@@ -193,7 +193,51 @@
 
 ## 6. 핵심 기능 코드 리뷰
 
-### 6-1. JWT 인증 & OAuth 2.0 소셜 로그인
+### 6-1. Toss Payments 결제 연동
+> 프리미엄 구독을 위한 결제 시스템
+
+<details>
+  <summary>코드 보기</summary>
+
+```java
+// PaymentController.java — Toss Payments 결제 승인 + 구독 활성화
+@PostMapping("/confirm/payment")
+public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<String, Object> payload) {
+    String paymentKey = String.valueOf(payload.get("paymentKey"));
+    String orderId   = String.valueOf(payload.get("orderId"));
+    int    amount    = Integer.parseInt(String.valueOf(payload.get("amount")));
+
+    // 1. 주문 조회 및 금액 위변조 검증
+    Payment payment = paymentService.selectByOrderId(orderId);
+    if (payment == null) return notFound("ORDER_NOT_FOUND");
+    if (payment.getAmount() != amount) return badRequest("AMOUNT_MISMATCH");
+
+    // 2. 이미 승인된 결제인 경우 → 구독 상태만 확인 후 반환
+    if ("DONE".equalsIgnoreCase(payment.getStatus())) {
+        // 구독이 비활성이면 활성화 처리
+        if (!isSubscriptionActive) {
+            int periodMonths = resolvePeriodByAmount(amount);
+            subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    // 3. Toss Payments API에 결제 승인 요청
+    Map<String, Object> tossResponse = paymentService.confirmTossPayment(paymentKey, orderId, amount);
+
+    // 4. DB에 승인 상태 반영
+    paymentService.markApproved(orderId, paymentKey);
+
+    // 5. 금액에 따른 구독 기간 계산 후 구독 활성화
+    int periodMonths = resolvePeriodByAmount(amount);   // 3900→1개월, 9900→3개월, 18000→6개월
+    subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
+
+    return ResponseEntity.ok(response);
+}
+```
+</details>
+
+### 6-2. JWT 인증 & OAuth 2.0 소셜 로그인
 > Spring Security + JWT 토큰 기반 Stateless 인증 + 카카오/네이버/구글 소셜 로그인
 
 <details>
@@ -342,7 +386,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService{
 ```
 </details>
 
-### 6-2. React Context 기반 인증 상태 관리
+### 6-3. React Context 기반 인증 상태 관리
 > AppContext + useApp() 훅을 활용한 전역 인증 상태 관리
 
 <details>
@@ -408,7 +452,7 @@ export function useApp() {
 ```
 </details>
 
-### 6-3. AI 검색 기능 (OpenAI API)
+### 6-4. AI 검색 기능 (OpenAI API)
 > 사용자의 자연어 검색어를 OpenAI API로 분석하여 맞춤형 모임을 추천합니다.
 
 <details>
@@ -453,49 +497,7 @@ public ResponseEntity<?> search(@RequestBody Map<String, String> request) {
 ```
 </details>
 
-### 6-4. Toss Payments 결제 연동
-> 프리미엄 구독을 위한 결제 시스템
 
-<details>
-  <summary>코드 보기</summary>
-
-```java
-// PaymentController.java — Toss Payments 결제 승인 + 구독 활성화
-@PostMapping("/confirm/payment")
-public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<String, Object> payload) {
-    String paymentKey = String.valueOf(payload.get("paymentKey"));
-    String orderId   = String.valueOf(payload.get("orderId"));
-    int    amount    = Integer.parseInt(String.valueOf(payload.get("amount")));
-
-    // 1. 주문 조회 및 금액 위변조 검증
-    Payment payment = paymentService.selectByOrderId(orderId);
-    if (payment == null) return notFound("ORDER_NOT_FOUND");
-    if (payment.getAmount() != amount) return badRequest("AMOUNT_MISMATCH");
-
-    // 2. 이미 승인된 결제인 경우 → 구독 상태만 확인 후 반환
-    if ("DONE".equalsIgnoreCase(payment.getStatus())) {
-        // 구독이 비활성이면 활성화 처리
-        if (!isSubscriptionActive) {
-            int periodMonths = resolvePeriodByAmount(amount);
-            subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
-        }
-        return ResponseEntity.ok(response);
-    }
-
-    // 3. Toss Payments API에 결제 승인 요청
-    Map<String, Object> tossResponse = paymentService.confirmTossPayment(paymentKey, orderId, amount);
-
-    // 4. DB에 승인 상태 반영
-    paymentService.markApproved(orderId, paymentKey);
-
-    // 5. 금액에 따른 구독 기간 계산 후 구독 활성화
-    int periodMonths = resolvePeriodByAmount(amount);   // 3900→1개월, 9900→3개월, 18000→6개월
-    subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
-
-    return ResponseEntity.ok(response);
-}
-```
-</details>
 
 <br>
 
